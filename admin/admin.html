@@ -680,27 +680,20 @@
     </div>
     <div class="modal-body">
       <div class="pedido-detail-placeholder">
-        <p class="pedido-detail-id" id="modalPedidoId"># —</p>
+        <p class="pedido-detail-id"># —</p>
         <div class="pedido-detail-rows">
-          <div class="pedido-detail-row"><span>Cliente</span><span id="modalPedidoCliente">—</span></div>
-          <div class="pedido-detail-row"><span>Email</span><span id="modalPedidoEmail">—</span></div>
-          <div class="pedido-detail-row"><span>Producto</span><span id="modalPedidoProducto">—</span></div>
-          <div class="pedido-detail-row"><span>Tipo de entrega</span><span id="modalPedidoEntrega">—</span></div>
-          <div class="pedido-detail-row"><span>Código TV</span><span id="modalPedidoTvCode">—</span></div>
-          <div class="pedido-detail-row"><span>Método de pago</span><span id="modalPedidoMetodo">—</span></div>
-          <div class="pedido-detail-row"><span>Total</span><span id="modalPedidoTotal">—</span></div>
-          <div class="pedido-detail-row"><span>Fecha</span><span id="modalPedidoFecha">—</span></div>
-          <div class="pedido-detail-row"><span>Estado</span><span class="status-badge status-badge--pending" id="modalPedidoEstado">—</span></div>
-          <div class="pedido-detail-row" id="modalPedidoComprobanteRow">
-            <span>Comprobante</span>
-            <a id="modalPedidoComprobanteLink" href="#" target="_blank" style="color:#6366F1;font-weight:600;font-size:13px;">Ver imagen ↗</a>
-          </div>
+          <div class="pedido-detail-row"><span>Cliente</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Producto</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Cuenta entregada</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Total</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Fecha</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Estado</span><span class="status-badge status-badge--pending">—</span></div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" id="modalPedidoClose2">Cerrar</button>
-      <button class="btn-primary" id="btnAprobarPedido" style="display:none;">Aprobar pedido</button>
+      <button class="btn-primary">Marcar como completado</button>
     </div>
   </div>
 
@@ -708,7 +701,6 @@
   <!-- ══════ TOAST ══════ -->
   <div class="toast" id="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin.js"></script>
 </body>
 </html>
