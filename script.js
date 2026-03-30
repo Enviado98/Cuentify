@@ -627,9 +627,9 @@ modalOverlay.addEventListener('click', closeModal);
 /* ════════════════════════════════════
    IMAGE UPLOAD + COMPRESIÓN
 ════════════════════════════════════ */
-const MAX_BYTES = 20 * 1024; // 20 KB
-const MAX_DIM   = 200;       // px — suficiente para una card thumbnail
-const ACCEPTED  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_DIM  = 200;
+const QUALITY  = 0.78;
+const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -649,7 +649,6 @@ async function compressImage(file) {
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
 
-      // Escalar manteniendo aspecto
       let { width, height } = img;
       if (width > height) { height = Math.round(height * MAX_DIM / width);  width  = MAX_DIM; }
       else                { width  = Math.round(width  * MAX_DIM / height); height = MAX_DIM; }
@@ -659,20 +658,10 @@ async function compressImage(file) {
       canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
 
-      // Bajar calidad hasta caber en MAX_BYTES
-      let quality = 0.85;
-      const tryEncode = () => {
-        canvas.toBlob(blob => {
-          if (!blob) { reject(new Error('Error al comprimir la imagen.')); return; }
-          if (blob.size > MAX_BYTES && quality > 0.1) {
-            quality = Math.max(0.1, quality - 0.1);
-            tryEncode();
-          } else {
-            resolve(new File([blob], 'img.jpg', { type: 'image/jpeg' }));
-          }
-        }, 'image/jpeg', quality);
-      };
-      tryEncode();
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('Error al comprimir la imagen.')); return; }
+        resolve(new File([blob], 'img.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', QUALITY);
     };
 
     img.src = objectUrl;
