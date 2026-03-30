@@ -242,7 +242,6 @@ body.admin-mode .product-thumb-wrapper { overflow: visible; }
 }
 
 body.admin-mode .product-admin-actions { display: flex; }
-body.admin-mode .product-card          { cursor: default; }
 body.admin-mode .product-card:active   { transform: none; }
 
 .product-btn-edit,

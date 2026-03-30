@@ -199,10 +199,7 @@ function buildCard(product) {
     loadProducts(currentTab);
   });
 
-  card.addEventListener('click', () => {
-    if (isAdmin) return;
-    openDetailView(product);
-  });
+  card.addEventListener('click', () => openDetailView(product));
 
   return card;
 }
