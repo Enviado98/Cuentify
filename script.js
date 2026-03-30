@@ -23,6 +23,7 @@ let isAdmin      = false;
 let menuOpen     = false;
 let modalOpen    = false;
 let selectedFile = null;
+let editingProduct = null;
 let currentProduct = null;   // product being viewed in detail
 let currentAccount = null;   // account selected for purchase
 
@@ -166,6 +167,14 @@ function buildCard(product) {
   card.innerHTML = `
     <div class="product-thumb-wrapper">
       ${imgHtml}
+      <div class="product-admin-actions">
+        <button class="product-btn-edit" aria-label="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="product-btn-delete" aria-label="Borrar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
       <div class="product-card-body">
         <div class="product-name">${product.name}</div>
         <div class="product-divider"></div>
@@ -177,8 +186,23 @@ function buildCard(product) {
     </div>
   `;
 
-  // ── OPEN DETAIL VIEW ──
-  card.addEventListener('click', () => openDetailView(product));
+  card.querySelector('.product-btn-edit').addEventListener('click', e => {
+    e.stopPropagation();
+    openModal(product);
+  });
+
+  card.querySelector('.product-btn-delete').addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!confirm(`¿Borrar "${product.name}"? Se eliminarán también sus cuentas asociadas.`)) return;
+    const { error } = await supabase.from('products').delete().eq('id', product.id);
+    if (error) return alert('Error al borrar: ' + error.message);
+    loadProducts(currentTab);
+  });
+
+  card.addEventListener('click', () => {
+    if (isAdmin) return;
+    openDetailView(product);
+  });
 
   return card;
 }
@@ -311,10 +335,38 @@ function buildAccountCard(account) {
       <span class="account-card-price">${priceDisplay}</span>
       <span class="account-card-currency">MXN</span>
     </div>
+    <div class="account-card-actions">
+      <button class="account-btn-edit" aria-label="Editar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="account-btn-delete" aria-label="Borrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>
     <svg class="account-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
   `;
 
-  card.addEventListener('click', () => openBuySheet(account, priceDisplay));
+  // Admin actions
+  const editBtn   = card.querySelector('.account-btn-edit');
+  const deleteBtn = card.querySelector('.account-btn-delete');
+
+  editBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    openPublishSheet(account);
+  });
+
+  deleteBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!confirm('¿Borrar esta cuenta? Esta acción no se puede deshacer.')) return;
+    const { error } = await supabase.from('accounts').delete().eq('id', account.id);
+    if (error) return alert('Error al borrar: ' + error.message);
+    loadAccounts(currentProduct.id, currentProduct);
+  });
+
+  card.addEventListener('click', () => {
+    if (isAdmin) return; // en admin no abre el flujo de compra
+    openBuySheet(account, priceDisplay);
+  });
 
   return card;
 }
@@ -522,10 +574,32 @@ adminExitBtn.addEventListener('click', exitAdmin);
 /* ════════════════════════════════════
    ADMIN MODAL
 ════════════════════════════════════ */
-function openModal() {
+function openModal(product = null) {
+  editingProduct = product || null;
+  resetModal();
+
+  const modalTitle = modalSheet.querySelector('.modal-title');
+
+  if (product) {
+    modalTitle.textContent  = 'Editar producto';
+    btnSave.textContent     = 'Guardar cambios';
+    productName.value       = product.name || '';
+    productCat.value        = product.category || currentTab;
+    // Mostrar imagen actual si existe
+    if (product.image_url) {
+      imgPreview.src = product.image_url;
+      imgPreview.classList.add('visible');
+      imgPlaceholder.style.display = 'none';
+      imgUploadArea.classList.add('has-image');
+    }
+  } else {
+    modalTitle.textContent = 'Nuevo producto';
+    btnSave.textContent    = 'Guardar producto';
+    productCat.value       = currentTab;
+  }
+
   modalSheet.classList.add('open');
   modalOverlay.classList.add('visible');
-  productCat.value = currentTab;
   modalOpen = true;
 }
 
@@ -533,6 +607,7 @@ function closeModal() {
   modalSheet.classList.remove('open');
   modalOverlay.classList.remove('visible');
   modalOpen = false;
+  editingProduct = null;
   resetModal();
 }
 
@@ -545,7 +620,6 @@ function resetModal() {
   selectedFile = null;
   modalError.textContent = '';
   btnSave.disabled = false;
-  btnSave.textContent = 'Guardar producto';
 }
 
 adminAddBtn.addEventListener('click', openModal);
@@ -583,7 +657,7 @@ btnSave.addEventListener('click', async () => {
   btnSave.disabled = true;
   btnSave.textContent = 'Guardando…';
 
-  let image_url = null;
+  let image_url = editingProduct ? editingProduct.image_url : null;
 
   if (selectedFile) {
     const ext  = selectedFile.name.split('.').pop();
@@ -596,7 +670,7 @@ btnSave.addEventListener('click', async () => {
     if (uploadError) {
       modalError.textContent = 'Error subiendo imagen: ' + uploadError.message;
       btnSave.disabled = false;
-      btnSave.textContent = 'Guardar producto';
+      btnSave.textContent = editingProduct ? 'Guardar cambios' : 'Guardar producto';
       return;
     }
 
@@ -607,19 +681,21 @@ btnSave.addEventListener('click', async () => {
     image_url = urlData.publicUrl;
   }
 
-  const { error: insertError } = await supabase
-    .from('products')
-    .insert([{ name, image_url, category }]);
+  const payload = { name, image_url, category };
 
-  if (insertError) {
-    modalError.textContent = 'Error guardando: ' + insertError.message;
+  const { error } = editingProduct
+    ? await supabase.from('products').update(payload).eq('id', editingProduct.id)
+    : await supabase.from('products').insert([payload]);
+
+  if (error) {
+    modalError.textContent = 'Error guardando: ' + error.message;
     btnSave.disabled = false;
-    btnSave.textContent = 'Guardar producto';
+    btnSave.textContent = editingProduct ? 'Guardar cambios' : 'Guardar producto';
     return;
   }
 
   closeModal();
-  if (category === currentTab) loadProducts(currentTab);
+  loadProducts(category === currentTab ? currentTab : currentTab);
 });
 
 
@@ -638,13 +714,14 @@ setTimeout(() => {
 
 
 /* ════════════════════════════════════
-   PUBLISH ACCOUNT (Admin)
+   PUBLISH ACCOUNT (Admin) — crear y editar
 ════════════════════════════════════ */
 
 const fabPublish      = document.getElementById('fabPublish');
 const publishOverlay  = document.getElementById('publishOverlay');
 const publishSheet    = document.getElementById('publishSheet');
 const publishCloseBtn = document.getElementById('publishCloseBtn');
+const publishSheetTitle = document.getElementById('publishSheetTitle') || publishSheet.querySelector('.publish-sheet-title');
 const publishDesc     = document.getElementById('publishDesc');
 const publishPrice    = document.getElementById('publishPrice');
 const publishDays     = document.getElementById('publishDays');
@@ -652,15 +729,38 @@ const publishDelivery = document.getElementById('publishDelivery');
 const btnPublish      = document.getElementById('btnPublish');
 const publishError    = document.getElementById('publishError');
 
-// Preview elements
 const pvName         = document.getElementById('pvName');
 const pvDaysText     = document.getElementById('pvDaysText');
 const pvDeliveryText = document.getElementById('pvDeliveryText');
 const pvPrice        = document.getElementById('pvPrice');
 
+let editingAccountId = null; // null = crear, id = editar
+
 // ── Open / Close ──
-function openPublishSheet() {
-  resetPublishForm();
+function openPublishSheet(account = null) {
+  editingAccountId = account ? account.id : null;
+
+  if (account) {
+    // Modo edición: pre-rellenar campos
+    publishSheetTitle.textContent = 'Editar cuenta';
+    btnPublish.querySelector('.btn-publish-text').textContent = 'Guardar cambios';
+    publishDesc.value     = account.description || '';
+    publishPrice.value    = account.price ? parseFloat(account.price).toFixed(2) : '';
+    publishDays.value     = account.expires_at
+      ? Math.max(1, Math.round((new Date(account.expires_at) - new Date()) / 86400000))
+      : '';
+    publishDelivery.value = account.delivery_hours ?? 12;
+  } else {
+    resetPublishForm();
+    publishSheetTitle.textContent = 'Publicar cuenta';
+    btnPublish.querySelector('.btn-publish-text').textContent = 'Publicar cuenta';
+  }
+
+  publishError.textContent = '';
+  btnPublish.disabled = false;
+  btnPublish.classList.remove('loading');
+  updatePreview();
+
   publishSheet.classList.add('open');
   publishOverlay.classList.add('visible');
   setTimeout(() => publishDesc.focus(), 380);
@@ -669,9 +769,10 @@ function openPublishSheet() {
 function closePublishSheet() {
   publishSheet.classList.remove('open');
   publishOverlay.classList.remove('visible');
+  editingAccountId = null;
 }
 
-fabPublish.addEventListener('click', openPublishSheet);
+fabPublish.addEventListener('click', () => openPublishSheet());
 publishCloseBtn.addEventListener('click', closePublishSheet);
 publishOverlay.addEventListener('click', closePublishSheet);
 
@@ -683,9 +784,9 @@ function updatePreview() {
   const delivery = parseInt(publishDelivery.value, 10);
 
   pvName.textContent         = desc;
-  pvDaysText.textContent     = isNaN(days)  ? '— días'     : `${days} día${days !== 1 ? 's' : ''}`;
-  pvDeliveryText.textContent = isNaN(delivery) ? '—h entrega' : `${delivery}h entrega`;
-  pvPrice.textContent        = isNaN(price) ? '$—'         : `$${price.toFixed(2)}`;
+  pvDaysText.textContent     = isNaN(days)     ? '— días'       : `${days} día${days !== 1 ? 's' : ''}`;
+  pvDeliveryText.textContent = isNaN(delivery) ? '—h entrega'   : `${delivery}h entrega`;
+  pvPrice.textContent        = isNaN(price)    ? '$—'           : `$${price.toFixed(2)}`;
 }
 
 [publishDesc, publishPrice, publishDays, publishDelivery].forEach(el => {
@@ -695,18 +796,17 @@ function updatePreview() {
 
 // ── Reset form ──
 function resetPublishForm() {
-  publishDesc.value     = '';
-  publishPrice.value    = '';
-  publishDays.value     = '';
-  publishDelivery.value = '12';
+  publishDesc.value        = '';
+  publishPrice.value       = '';
+  publishDays.value        = '';
+  publishDelivery.value    = '12';
   publishError.textContent = '';
-  btnPublish.disabled   = false;
+  btnPublish.disabled      = false;
   btnPublish.classList.remove('loading');
-  btnPublish.querySelector('.btn-publish-text').textContent = 'Publicar cuenta';
   updatePreview();
 }
 
-// ── Save to Supabase ──
+// ── Save to Supabase (crear o editar) ──
 btnPublish.addEventListener('click', async () => {
   publishError.textContent = '';
 
@@ -715,41 +815,37 @@ btnPublish.addEventListener('click', async () => {
   const days     = parseInt(publishDays.value, 10);
   const delivery = parseInt(publishDelivery.value, 10);
 
-  // Validación
-  if (!desc)          { publishError.textContent = 'La descripción es obligatoria.'; return; }
-  if (isNaN(price) || price < 0) { publishError.textContent = 'Ingresa un precio válido.'; return; }
-  if (isNaN(days) || days < 1)   { publishError.textContent = 'Ingresa la duración en días.'; return; }
-  if (!currentProduct)           { publishError.textContent = 'Error: no hay producto seleccionado.'; return; }
+  if (!desc)                      { publishError.textContent = 'La descripción es obligatoria.'; return; }
+  if (isNaN(price) || price < 0)  { publishError.textContent = 'Ingresa un precio válido.'; return; }
+  if (isNaN(days)  || days < 1)   { publishError.textContent = 'Ingresa la duración en días.'; return; }
+  if (!currentProduct)            { publishError.textContent = 'Error: no hay producto seleccionado.'; return; }
 
-  // UI: loading
   btnPublish.disabled = true;
   btnPublish.classList.add('loading');
-  btnPublish.querySelector('.btn-publish-text').textContent = 'Publicando…';
+  btnPublish.querySelector('.btn-publish-text').textContent = editingAccountId ? 'Guardando…' : 'Publicando…';
 
-  // Calcular expires_at
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + days);
 
-  const { error } = await supabase
-    .from('accounts')
-    .insert([{
-      product_id:     currentProduct.id,
-      description:    desc,
-      price:          price,
-      expires_at:     expiresAt.toISOString(),
-      delivery_hours: delivery,
-      is_available:   true
-    }]);
+  const payload = {
+    description:    desc,
+    price:          price,
+    expires_at:     expiresAt.toISOString(),
+    delivery_hours: delivery,
+  };
+
+  const { error } = editingAccountId
+    ? await supabase.from('accounts').update(payload).eq('id', editingAccountId)
+    : await supabase.from('accounts').insert([{ ...payload, product_id: currentProduct.id, is_available: true }]);
 
   if (error) {
-    publishError.textContent = 'Error al publicar: ' + error.message;
+    publishError.textContent = 'Error: ' + error.message;
     btnPublish.disabled = false;
     btnPublish.classList.remove('loading');
-    btnPublish.querySelector('.btn-publish-text').textContent = 'Publicar cuenta';
+    btnPublish.querySelector('.btn-publish-text').textContent = editingAccountId ? 'Guardar cambios' : 'Publicar cuenta';
     return;
   }
 
-  // Éxito
   closePublishSheet();
   loadAccounts(currentProduct.id, currentProduct);
 });

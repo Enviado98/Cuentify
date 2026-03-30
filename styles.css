@@ -226,7 +226,51 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+
+body.admin-mode .product-thumb-wrapper { overflow: visible; }
+
+/* ── Admin action buttons on product cards ── */
+.product-admin-actions {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  gap: 5px;
+}
+
+body.admin-mode .product-admin-actions { display: flex; }
+body.admin-mode .product-card          { cursor: default; }
+body.admin-mode .product-card:active   { transform: none; }
+
+.product-btn-edit,
+.product-btn-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: transform 0.1s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.product-btn-edit {
+  background: rgba(255,255,255,0.88);
+  color: #2563EB;
+}
+.product-btn-edit:active  { background: #DBEAFE; transform: scale(0.92); }
+
+.product-btn-delete {
+  background: rgba(255,255,255,0.88);
+  color: #EF4444;
+}
+.product-btn-delete:active { background: #FEE2E2; transform: scale(0.92); }
 .product-thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -497,6 +541,45 @@ body {
   flex-shrink: 0;
   margin-left: 4px;
 }
+
+/* ── Admin action buttons on account cards ── */
+.account-card-actions {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.account-btn-edit,
+.account-btn-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.account-btn-edit {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+.account-btn-edit:active  { background: #DBEAFE; transform: scale(0.93); }
+
+.account-btn-delete {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+.account-btn-delete:active { background: #FEE2E2; transform: scale(0.93); }
+
+/* En modo admin: mostrar botones, ocultar arrow y deshabilitar tap de compra */
+body.admin-mode .account-card-actions { display: flex; }
+body.admin-mode .account-card-arrow   { display: none; }
+body.admin-mode .account-card         { cursor: default; }
 
 .accounts-empty {
   display: flex;
