@@ -9,37 +9,87 @@
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header class="navbar">
-    <div class="navbar-logo">Cuentify</div>
-    <button class="hamburger" id="hamburgerBtn" aria-label="Menú">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-  </header>
+  <!-- ══════════════════════════════
+       VISTA 1: LISTADO DE PRODUCTOS
+  ══════════════════════════════ -->
+  <div class="view" id="viewHome">
 
-  <!-- TABS -->
-  <nav class="tabs">
-    <ul class="tabs-list">
-      <li class="tab-item active" data-tab="streaming">Streaming</li>
-      <li class="tab-item" data-tab="musica">Música</li>
-      <li class="tab-item" data-tab="gaming">Gaming</li>
-      <li class="tab-item" data-tab="software">Software</li>
-      <li class="tab-item" data-tab="internet">Internet</li>
-    </ul>
-  </nav>
+    <header class="navbar">
+      <div class="navbar-logo">Cuentify</div>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
-    <div class="products-grid" id="productsGrid"></div>
-    <div class="products-empty" id="productsEmpty" style="display:none;">
-      <p>No hay productos en esta categoría aún.</p>
+    <nav class="tabs">
+      <ul class="tabs-list">
+        <li class="tab-item active" data-tab="streaming">Streaming</li>
+        <li class="tab-item" data-tab="musica">Música</li>
+        <li class="tab-item" data-tab="gaming">Gaming</li>
+        <li class="tab-item" data-tab="software">Software</li>
+        <li class="tab-item" data-tab="internet">Internet</li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <div class="products-grid" id="productsGrid"></div>
+      <div class="products-empty" id="productsEmpty" style="display:none;">
+        <p>No hay productos en esta categoría aún.</p>
+      </div>
+      <div class="products-loading" id="productsLoading">
+        <div class="spinner"></div>
+      </div>
+    </main>
+
+  </div><!-- /viewHome -->
+
+  <!-- ══════════════════════════════
+       VISTA 2: DETALLE + CUENTAS
+  ══════════════════════════════ -->
+  <div class="view view-detail" id="viewDetail">
+
+    <!-- Navbar del detalle -->
+    <header class="navbar navbar-detail">
+      <button class="back-btn" id="backBtn" aria-label="Volver">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="detail-navbar-title" id="detailNavTitle">Cuentas</div>
+      <div style="width:40px"></div><!-- spacer -->
+    </header>
+
+    <!-- Hero del producto -->
+    <div class="detail-hero" id="detailHero">
+      <div class="detail-hero-img-wrap">
+        <img class="detail-hero-img" id="detailHeroImg" src="" alt="" />
+        <div class="detail-hero-placeholder" id="detailHeroPlaceholder">📦</div>
+      </div>
+      <div class="detail-hero-info">
+        <h1 class="detail-hero-title" id="detailHeroTitle">—</h1>
+        <p class="detail-hero-sub" id="detailHeroSub">Elige la cuenta que más te convenga</p>
+      </div>
     </div>
-    <div class="products-loading" id="productsLoading">
-      <div class="spinner"></div>
+
+    <!-- Lista de cuentas -->
+    <div class="accounts-section">
+      <p class="accounts-section-label">Cuentas disponibles</p>
+
+      <div class="accounts-list" id="accountsList"></div>
+
+      <div class="accounts-loading" id="accountsLoading">
+        <div class="spinner"></div>
+      </div>
+
+      <div class="accounts-empty" id="accountsEmpty" style="display:none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+        <p>No hay cuentas disponibles por ahora.</p>
+      </div>
     </div>
-  </main>
+
+  </div><!-- /viewDetail -->
+
+  <!-- ══════════════ MODALES COMPARTIDOS ══════════════ -->
 
   <!-- MENU SHEET -->
   <div class="menu-overlay" id="menuOverlay"></div>
@@ -81,7 +131,6 @@
         <h2 class="modal-title">Nuevo producto</h2>
         <button class="modal-close" id="modalCloseBtn">✕</button>
       </div>
-
       <div class="img-upload-area" id="imgUploadArea">
         <input type="file" id="imgInput" accept="image/*" hidden />
         <div class="img-upload-placeholder" id="imgPlaceholder">
@@ -94,7 +143,6 @@
         </div>
         <img class="img-preview" id="imgPreview" src="" alt="" />
       </div>
-
       <div class="modal-fields">
         <div class="field-group">
           <label class="field-label">Nombre del producto</label>
@@ -113,70 +161,28 @@
           </div>
         </div>
       </div>
-
       <button class="btn-save" id="btnSave">Guardar producto</button>
       <p class="modal-error" id="modalError"></p>
     </div>
   </div>
 
-  <!-- PRODUCT DETAIL SHEET -->
-  <div class="detail-overlay" id="detailOverlay"></div>
-  <div class="detail-sheet" id="detailSheet">
-    <div class="detail-handle"></div>
-    <div class="detail-content">
-
-      <!-- Header: imagen + título + días -->
-      <div class="detail-header">
-        <div class="detail-img-wrap">
-          <img class="detail-img" id="detailImg" src="" alt="" />
-          <div class="detail-img-placeholder" id="detailImgPlaceholder">📦</div>
-        </div>
-        <div class="detail-header-info">
-          <div class="detail-days-badge" id="detailDaysBadge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span id="detailDaysText">—</span>
-          </div>
-          <h2 class="detail-title" id="detailTitle">—</h2>
-          <p class="detail-desc" id="detailDesc">—</p>
-        </div>
+  <!-- COMPRA CONFIRMACIÓN SHEET -->
+  <div class="buy-overlay" id="buyOverlay"></div>
+  <div class="buy-sheet" id="buySheet">
+    <div class="buy-sheet-handle"></div>
+    <div class="buy-sheet-content">
+      <div class="buy-sheet-icon">🛒</div>
+      <h3 class="buy-sheet-title" id="buySheetTitle">Confirmar compra</h3>
+      <p class="buy-sheet-desc" id="buySheetDesc">—</p>
+      <div class="buy-sheet-price-row">
+        <span class="buy-sheet-price" id="buySheetPrice">$0.00</span>
+        <span class="buy-sheet-currency">MXN</span>
       </div>
-
-      <div class="detail-divider"></div>
-
-      <!-- Vendedor + rating -->
-      <div class="detail-meta">
-        <div class="detail-seller">
-          <div class="detail-seller-avatar" id="detailSellerAvatar"></div>
-          <div class="detail-seller-info">
-            <span class="detail-seller-name" id="detailSellerName">Digital goods</span>
-            <span class="detail-seller-dot"></span>
-          </div>
-        </div>
-        <div class="detail-rating">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#2563EB"><path d="M7 22V11M2 13v7a1 1 0 001 1h3M17 22V11m5 2v7a1 1 0 01-1 1h-3M14 22H10M12 2l2.09 4.26L19 7.27l-3.5 3.41.83 4.82L12 13.27l-4.33 2.23.83-4.82L5 7.27l4.91-.71z"/></svg>
-          <span class="detail-rating-pct" id="detailRating">99.85%</span>
-          <span class="detail-rating-count" id="detailRatingCount">(2,590)</span>
-        </div>
-      </div>
-
-      <!-- Precio + duración -->
-      <div class="detail-pricing">
-        <div class="detail-price-block">
-          <span class="detail-price" id="detailPrice">$0.00</span>
-          <span class="detail-currency">MXN</span>
-        </div>
-        <div class="detail-duration">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span id="detailDuration">—</span>
-        </div>
-      </div>
-
-      <!-- Botón comprar -->
       <button class="btn-buy" id="btnBuy">
-        <span class="btn-buy-text">Comprar</span>
+        <span class="btn-buy-text">Comprar ahora</span>
         <span class="btn-buy-spinner"></span>
       </button>
-
+      <button class="btn-buy-cancel" id="btnBuyCancel">Cancelar</button>
     </div>
   </div>
 

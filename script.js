@@ -1,5 +1,5 @@
 /* ==============================
-   CUENTIFY – script.js
+   CUENTIFY – script.js v3
    ============================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,37 +18,64 @@ if (!window.supabase) {
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── STATE ──
-let currentTab  = 'streaming';
-let isAdmin     = false;
-let menuOpen    = false;
-let modalOpen   = false;
+let currentTab   = 'streaming';
+let isAdmin      = false;
+let menuOpen     = false;
+let modalOpen    = false;
 let selectedFile = null;
+let currentProduct = null;   // product being viewed in detail
+let currentAccount = null;   // account selected for purchase
 
-// ── ELEMENTS ──
-const navbar        = document.querySelector('.navbar');
-const hamburgerBtn  = document.getElementById('hamburgerBtn');
-const menuSheet     = document.getElementById('menuSheet');
-const menuOverlay   = document.getElementById('menuOverlay');
-const adminBar      = document.getElementById('adminBar');
-const adminAddBtn   = document.getElementById('adminAddBtn');
-const adminExitBtn  = document.getElementById('adminExitBtn');
-const btnEntrar     = document.getElementById('btnEntrar');
-const modalSheet    = document.getElementById('modalSheet');
-const modalOverlay  = document.getElementById('modalOverlay');
-const modalCloseBtn = document.getElementById('modalCloseBtn');
-const imgUploadArea = document.getElementById('imgUploadArea');
-const imgInput      = document.getElementById('imgInput');
-const imgPlaceholder= document.getElementById('imgPlaceholder');
-const imgPreview    = document.getElementById('imgPreview');
-const productName   = document.getElementById('productName');
-const productCat    = document.getElementById('productCategory');
-const btnSave       = document.getElementById('btnSave');
-const modalError    = document.getElementById('modalError');
-const productsGrid  = document.getElementById('productsGrid');
-const productsEmpty = document.getElementById('productsEmpty');
+// ── ELEMENTS: HOME ──
+const viewHome        = document.getElementById('viewHome');
+const viewDetail      = document.getElementById('viewDetail');
+const navbar          = document.querySelector('#viewHome .navbar');
+const hamburgerBtn    = document.getElementById('hamburgerBtn');
+const menuSheet       = document.getElementById('menuSheet');
+const menuOverlay     = document.getElementById('menuOverlay');
+const adminBar        = document.getElementById('adminBar');
+const adminAddBtn     = document.getElementById('adminAddBtn');
+const adminExitBtn    = document.getElementById('adminExitBtn');
+const btnEntrar       = document.getElementById('btnEntrar');
+const modalSheet      = document.getElementById('modalSheet');
+const modalOverlay    = document.getElementById('modalOverlay');
+const modalCloseBtn   = document.getElementById('modalCloseBtn');
+const imgUploadArea   = document.getElementById('imgUploadArea');
+const imgInput        = document.getElementById('imgInput');
+const imgPlaceholder  = document.getElementById('imgPlaceholder');
+const imgPreview      = document.getElementById('imgPreview');
+const productName     = document.getElementById('productName');
+const productCat      = document.getElementById('productCategory');
+const btnSave         = document.getElementById('btnSave');
+const modalError      = document.getElementById('modalError');
+const productsGrid    = document.getElementById('productsGrid');
+const productsEmpty   = document.getElementById('productsEmpty');
 const productsLoading = document.getElementById('productsLoading');
 
-// ── TAB NAVIGATION ──
+// ── ELEMENTS: DETAIL ──
+const backBtn           = document.getElementById('backBtn');
+const detailNavTitle    = document.getElementById('detailNavTitle');
+const detailHeroImg     = document.getElementById('detailHeroImg');
+const detailHeroPlaceholder = document.getElementById('detailHeroPlaceholder');
+const detailHeroTitle   = document.getElementById('detailHeroTitle');
+const detailHeroSub     = document.getElementById('detailHeroSub');
+const accountsList      = document.getElementById('accountsList');
+const accountsLoading   = document.getElementById('accountsLoading');
+const accountsEmpty     = document.getElementById('accountsEmpty');
+
+// ── ELEMENTS: BUY SHEET ──
+const buyOverlay    = document.getElementById('buyOverlay');
+const buySheet      = document.getElementById('buySheet');
+const buySheetTitle = document.getElementById('buySheetTitle');
+const buySheetDesc  = document.getElementById('buySheetDesc');
+const buySheetPrice = document.getElementById('buySheetPrice');
+const btnBuy        = document.getElementById('btnBuy');
+const btnBuyCancel  = document.getElementById('btnBuyCancel');
+
+
+/* ════════════════════════════════════
+   TAB NAVIGATION
+════════════════════════════════════ */
 document.querySelectorAll('.tab-item').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -71,7 +98,10 @@ document.querySelectorAll('.menu-nav-item').forEach(link => {
   });
 });
 
-// ── LOAD PRODUCTS ──
+
+/* ════════════════════════════════════
+   LOAD PRODUCTS
+════════════════════════════════════ */
 async function loadProducts(category) {
   productsGrid.innerHTML = '';
   productsEmpty.style.display = 'none';
@@ -85,20 +115,12 @@ async function loadProducts(category) {
 
   productsLoading.style.display = 'none';
 
-  if (error) {
-    console.error('Error cargando productos:', error);
+  if (error || !data || data.length === 0) {
     productsEmpty.style.display = 'block';
     return;
   }
 
-  if (!data || data.length === 0) {
-    productsEmpty.style.display = 'block';
-    return;
-  }
-
-  data.forEach(product => {
-    productsGrid.appendChild(buildCard(product));
-  });
+  data.forEach(product => productsGrid.appendChild(buildCard(product)));
 }
 
 function buildCard(product) {
@@ -129,27 +151,226 @@ function buildCard(product) {
     </div>
   `;
 
-  // Open detail sheet on tap
-  card.addEventListener('click', () => openDetail(product));
+  // ── OPEN DETAIL VIEW ──
+  card.addEventListener('click', () => openDetailView(product));
 
   return card;
 }
 
-// ── PRICE HELPERS ──
-function daysRemaining(product) {
-  if (!product.expires_at) return null;
-  const diff = new Date(product.expires_at) - new Date();
+
+/* ════════════════════════════════════
+   DETAIL VIEW  (slide-in)
+════════════════════════════════════ */
+function openDetailView(product) {
+  currentProduct = product;
+
+  // Populate hero
+  detailNavTitle.textContent = product.name;
+  detailHeroTitle.textContent = product.name;
+  detailHeroSub.textContent   = 'Elige la cuenta que más te convenga';
+
+  if (product.image_url) {
+    detailHeroImg.src = product.image_url;
+    detailHeroImg.classList.add('visible');
+    detailHeroPlaceholder.style.display = 'none';
+  } else {
+    detailHeroImg.classList.remove('visible');
+    detailHeroPlaceholder.style.display = 'flex';
+  }
+
+  // Slide in
+  viewDetail.classList.add('open');
+  viewHome.classList.add('pushed');
+  viewDetail.scrollTop = 0;
+
+  // Load accounts for this product
+  loadAccounts(product.id, product);
+}
+
+function closeDetailView() {
+  viewDetail.classList.remove('open');
+  viewHome.classList.remove('pushed');
+  currentProduct = null;
+}
+
+backBtn.addEventListener('click', closeDetailView);
+
+// Handle browser back gesture
+window.addEventListener('popstate', () => {
+  if (viewDetail.classList.contains('open')) {
+    closeDetailView();
+  }
+});
+
+
+/* ════════════════════════════════════
+   LOAD ACCOUNTS
+   Reads from table: accounts
+   Columns expected:
+     id, product_id, description,
+     price, expires_at, delivery_hours,
+     base_price (optional – dynamic pricing)
+════════════════════════════════════ */
+async function loadAccounts(productId, product) {
+  accountsList.innerHTML = '';
+  accountsEmpty.style.display = 'none';
+  accountsLoading.style.display = 'flex';
+
+  const { data, error } = await supabase
+    .from('accounts')
+    .select('*')
+    .eq('product_id', productId)
+    .order('expires_at', { ascending: true });
+
+  accountsLoading.style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    accountsEmpty.style.display = 'flex';
+    return;
+  }
+
+  data.forEach(account => {
+    // Attach parent product image for thumbnail
+    account._productImageUrl = product.image_url;
+    accountsList.appendChild(buildAccountCard(account));
+  });
+}
+
+function buildAccountCard(account) {
+  const card = document.createElement('div');
+  card.className = 'account-card';
+
+  const days   = daysRemaining(account);
+  const price  = calcPrice(account);
+
+  // Thumbnail
+  const thumbHtml = account._productImageUrl
+    ? `<div class="account-card-thumb"><img src="${account._productImageUrl}" alt="" /></div>`
+    : `<div class="account-card-thumb">📦</div>`;
+
+  // Days badge
+  const daysBadge = days !== null
+    ? `<span class="account-card-days">
+         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+         ${days} día${days !== 1 ? 's' : ''}
+       </span>`
+    : '';
+
+  // Duration
+  const hours = account.delivery_hours ?? 12;
+  const durationBadge = `<span class="account-card-duration">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    ${hours}h entrega
+  </span>`;
+
+  // Description fallback
+  const desc = account.description || (days !== null ? `Expira en ${days} días` : 'Cuenta disponible');
+
+  // Price display
+  const priceDisplay = price !== null
+    ? `$${price.toFixed(2)}`
+    : (account.price ? `$${parseFloat(account.price).toFixed(2)}` : '$0.00');
+
+  card.innerHTML = `
+    ${thumbHtml}
+    <div class="account-card-info">
+      <div class="account-card-name">${account.description || 'Cuenta disponible'}</div>
+      <div class="account-card-desc">${desc}</div>
+      <div class="account-card-meta">
+        ${daysBadge}
+        ${durationBadge}
+      </div>
+    </div>
+    <div class="account-card-price-wrap">
+      <span class="account-card-price">${priceDisplay}</span>
+      <span class="account-card-currency">MXN</span>
+    </div>
+    <svg class="account-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+  `;
+
+  card.addEventListener('click', () => openBuySheet(account, priceDisplay));
+
+  return card;
+}
+
+
+/* ════════════════════════════════════
+   PRICE HELPERS
+════════════════════════════════════ */
+function daysRemaining(item) {
+  if (!item.expires_at) return null;
+  const diff = new Date(item.expires_at) - new Date();
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
-function calcPrice(product) {
-  if (!product.base_price) return null;
-  const days = daysRemaining(product);
-  if (days === null) return product.base_price;
-  return parseFloat(((days / 30) * product.base_price).toFixed(2));
+function calcPrice(item) {
+  if (!item.base_price) return null;
+  const days = daysRemaining(item);
+  if (days === null) return parseFloat(item.base_price);
+  return parseFloat(((days / 30) * item.base_price).toFixed(2));
 }
 
-// ── MENU ──
+
+/* ════════════════════════════════════
+   BUY CONFIRMATION SHEET
+════════════════════════════════════ */
+function openBuySheet(account, priceDisplay) {
+  currentAccount = account;
+
+  buySheetTitle.textContent = currentProduct ? currentProduct.name : 'Confirmar compra';
+  buySheetDesc.textContent  = account.description || 'Cuenta disponible';
+  buySheetPrice.textContent = priceDisplay;
+
+  resetBuyBtn();
+  buySheet.classList.add('open');
+  buyOverlay.classList.add('visible');
+}
+
+function closeBuySheet() {
+  buySheet.classList.remove('open');
+  buyOverlay.classList.remove('visible');
+  currentAccount = null;
+}
+
+buyOverlay.addEventListener('click', closeBuySheet);
+btnBuyCancel.addEventListener('click', closeBuySheet);
+
+function resetBuyBtn() {
+  btnBuy.classList.remove('activated', 'ripple', 'ripple-expand');
+  btnBuy.querySelector('.btn-buy-text').textContent = 'Comprar ahora';
+  btnBuy.disabled = false;
+}
+
+btnBuy.addEventListener('click', () => {
+  if (btnBuy.classList.contains('activated')) return;
+
+  // Ripple effect
+  btnBuy.classList.add('ripple');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      btnBuy.classList.add('ripple-expand');
+    });
+  });
+
+  // Animate to white/blue
+  setTimeout(() => {
+    btnBuy.classList.add('activated');
+    btnBuy.querySelector('.btn-buy-text').textContent = 'Procesando…';
+  }, 120);
+
+  // ─────────────────────────────────────────────
+  // TODO: lógica de compra aquí
+  // Ejemplo:
+  // const { error } = await supabase
+  //   .from('orders')
+  //   .insert([{ account_id: currentAccount.id, product_id: currentProduct.id }]);
+  // ─────────────────────────────────────────────
+});
+
+
+/* ════════════════════════════════════
+   MENU
+════════════════════════════════════ */
 function openMenu() {
   menuOpen = true;
   menuSheet.classList.add('open');
@@ -169,7 +390,10 @@ function closeMenu() {
 hamburgerBtn.addEventListener('click', () => menuOpen ? closeMenu() : openMenu());
 menuOverlay.addEventListener('click', closeMenu);
 
-// ── ADMIN MODE ──
+
+/* ════════════════════════════════════
+   ADMIN MODE
+════════════════════════════════════ */
 function enterAdmin() {
   isAdmin = true;
   document.body.classList.add('admin-mode');
@@ -183,18 +407,16 @@ function exitAdmin() {
   adminBar.classList.remove('visible');
 }
 
-btnEntrar.addEventListener('click', () => {
-  // TODO: replace with Supabase Google OAuth
-  enterAdmin();
-});
-
+btnEntrar.addEventListener('click', enterAdmin);
 adminExitBtn.addEventListener('click', exitAdmin);
 
-// ── ADMIN MODAL ──
+
+/* ════════════════════════════════════
+   ADMIN MODAL
+════════════════════════════════════ */
 function openModal() {
   modalSheet.classList.add('open');
   modalOverlay.classList.add('visible');
-  // pre-select current tab
   productCat.value = currentTab;
   modalOpen = true;
 }
@@ -222,7 +444,10 @@ adminAddBtn.addEventListener('click', openModal);
 modalCloseBtn.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', closeModal);
 
-// ── IMAGE UPLOAD ──
+
+/* ════════════════════════════════════
+   IMAGE UPLOAD
+════════════════════════════════════ */
 imgUploadArea.addEventListener('click', () => imgInput.click());
 
 imgInput.addEventListener('change', () => {
@@ -236,20 +461,22 @@ imgInput.addEventListener('change', () => {
   imgUploadArea.classList.add('has-image');
 });
 
-// ── SAVE PRODUCT ──
+
+/* ════════════════════════════════════
+   SAVE PRODUCT
+════════════════════════════════════ */
 btnSave.addEventListener('click', async () => {
   modalError.textContent = '';
-  const name = productName.value.trim();
+  const name     = productName.value.trim();
   const category = productCat.value;
 
   if (!name) { modalError.textContent = 'El nombre es obligatorio.'; return; }
 
   btnSave.disabled = true;
-  btnSave.textContent = 'Guardando...';
+  btnSave.textContent = 'Guardando…';
 
   let image_url = null;
 
-  // Upload image if selected
   if (selectedFile) {
     const ext  = selectedFile.name.split('.').pop();
     const path = `${category}/${Date.now()}.${ext}`;
@@ -272,7 +499,6 @@ btnSave.addEventListener('click', async () => {
     image_url = urlData.publicUrl;
   }
 
-  // Insert product
   const { error: insertError } = await supabase
     .from('products')
     .insert([{ name, image_url, category }]);
@@ -285,119 +511,15 @@ btnSave.addEventListener('click', async () => {
   }
 
   closeModal();
-  // Refresh if we're on the same tab
   if (category === currentTab) loadProducts(currentTab);
 });
 
-// ── INIT ──
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
 loadProducts(currentTab);
 
-// ── PRODUCT DETAIL SHEET ──
-const detailOverlay   = document.getElementById('detailOverlay');
-const detailSheet     = document.getElementById('detailSheet');
-const detailImg       = document.getElementById('detailImg');
-const detailImgPlaceholder = document.getElementById('detailImgPlaceholder');
-const detailDaysBadge = document.getElementById('detailDaysBadge');
-const detailDaysText  = document.getElementById('detailDaysText');
-const detailTitle     = document.getElementById('detailTitle');
-const detailDesc      = document.getElementById('detailDesc');
-const detailSellerName = document.getElementById('detailSellerName');
-const detailRating    = document.getElementById('detailRating');
-const detailRatingCount = document.getElementById('detailRatingCount');
-const detailPrice     = document.getElementById('detailPrice');
-const detailDuration  = document.getElementById('detailDuration');
-const btnBuy          = document.getElementById('btnBuy');
-
-function openDetail(product) {
-  // Image
-  if (product.image_url) {
-    detailImg.src = product.image_url;
-    detailImg.classList.add('visible');
-    detailImgPlaceholder.style.display = 'none';
-  } else {
-    detailImg.classList.remove('visible');
-    detailImgPlaceholder.style.display = 'flex';
-  }
-
-  // Days badge
-  const days = daysRemaining(product);
-  if (days !== null) {
-    detailDaysText.textContent = `${days} día${days === 1 ? '' : 's'}`;
-    detailDaysBadge.style.display = 'inline-flex';
-  } else {
-    detailDaysBadge.style.display = 'none';
-  }
-
-  // Title & description
-  detailTitle.textContent = product.name || '—';
-  detailDesc.textContent  = product.description || product.name || '—';
-
-  // Seller
-  detailSellerName.textContent = product.seller_name || 'Digital goods';
-
-  // Rating (use stored or defaults)
-  detailRating.textContent = product.rating_pct ? `${product.rating_pct}%` : '99.85%';
-  detailRatingCount.textContent = product.rating_count ? `(${product.rating_count.toLocaleString()})` : '(2,590)';
-
-  // Price
-  const price = calcPrice(product);
-  detailPrice.textContent = price !== null
-    ? `$${price.toFixed(2)}`
-    : (product.price ? `$${parseFloat(product.price).toFixed(2)}` : '$0.00');
-
-  // Duration
-  if (days !== null) {
-    detailDuration.textContent = `${days} hora${days === 1 ? '' : 's'} de entrega`;
-  } else if (product.delivery_hours) {
-    detailDuration.textContent = `${product.delivery_hours} horas`;
-  } else {
-    detailDuration.textContent = '12 horas';
-  }
-
-  // Reset buy button
-  resetBuyBtn();
-
-  // Store product ref for purchase
-  btnBuy._product = product;
-
-  // Open sheet
-  detailSheet.classList.add('open');
-  detailOverlay.classList.add('visible');
-}
-
-function closeDetail() {
-  detailSheet.classList.remove('open');
-  detailOverlay.classList.remove('visible');
-}
-
-detailOverlay.addEventListener('click', closeDetail);
-
-// Buy button animation
-function resetBuyBtn() {
-  btnBuy.classList.remove('activated', 'ripple', 'ripple-out');
-  btnBuy.querySelector('.btn-buy-text').textContent = 'Comprar';
-  btnBuy.disabled = false;
-}
-
-btnBuy.addEventListener('click', () => {
-  if (btnBuy.classList.contains('activated')) return;
-
-  // Ripple
-  btnBuy.classList.add('ripple');
-  requestAnimationFrame(() => {
-    btnBuy.classList.add('ripple-out');
-    btnBuy.classList.remove('ripple');
-  });
-
-  // Transition to white/blue
-  btnBuy.classList.add('activated');
-  btnBuy.querySelector('.btn-buy-text').textContent = 'Procesando…';
-
-  // TODO: insert purchase logic here
-  // Example: await supabase.from('orders').insert([{ product_id: btnBuy._product.id }]);
-});
-
-// Seguridad: si el spinner sigue visible a los 8s, mostramos vacío
 setTimeout(() => {
   if (productsLoading.style.display !== 'none') {
     productsLoading.style.display = 'none';
