@@ -527,4 +527,124 @@ setTimeout(() => {
   }
 }, 8000);
 
+
+
+/* ════════════════════════════════════
+   PUBLISH ACCOUNT (Admin)
+════════════════════════════════════ */
+
+const fabPublish      = document.getElementById('fabPublish');
+const publishOverlay  = document.getElementById('publishOverlay');
+const publishSheet    = document.getElementById('publishSheet');
+const publishCloseBtn = document.getElementById('publishCloseBtn');
+const publishDesc     = document.getElementById('publishDesc');
+const publishPrice    = document.getElementById('publishPrice');
+const publishDays     = document.getElementById('publishDays');
+const publishDelivery = document.getElementById('publishDelivery');
+const btnPublish      = document.getElementById('btnPublish');
+const publishError    = document.getElementById('publishError');
+
+// Preview elements
+const pvName         = document.getElementById('pvName');
+const pvDaysText     = document.getElementById('pvDaysText');
+const pvDeliveryText = document.getElementById('pvDeliveryText');
+const pvPrice        = document.getElementById('pvPrice');
+
+// ── Open / Close ──
+function openPublishSheet() {
+  resetPublishForm();
+  publishSheet.classList.add('open');
+  publishOverlay.classList.add('visible');
+  setTimeout(() => publishDesc.focus(), 380);
+}
+
+function closePublishSheet() {
+  publishSheet.classList.remove('open');
+  publishOverlay.classList.remove('visible');
+}
+
+fabPublish.addEventListener('click', openPublishSheet);
+publishCloseBtn.addEventListener('click', closePublishSheet);
+publishOverlay.addEventListener('click', closePublishSheet);
+
+// ── Live preview ──
+function updatePreview() {
+  const desc     = publishDesc.value.trim() || '—';
+  const price    = parseFloat(publishPrice.value);
+  const days     = parseInt(publishDays.value, 10);
+  const delivery = parseInt(publishDelivery.value, 10);
+
+  pvName.textContent         = desc;
+  pvDaysText.textContent     = isNaN(days)  ? '— días'     : `${days} día${days !== 1 ? 's' : ''}`;
+  pvDeliveryText.textContent = isNaN(delivery) ? '—h entrega' : `${delivery}h entrega`;
+  pvPrice.textContent        = isNaN(price) ? '$—'         : `$${price.toFixed(2)}`;
+}
+
+[publishDesc, publishPrice, publishDays, publishDelivery].forEach(el => {
+  el.addEventListener('input', updatePreview);
+  el.addEventListener('change', updatePreview);
+});
+
+// ── Reset form ──
+function resetPublishForm() {
+  publishDesc.value     = '';
+  publishPrice.value    = '';
+  publishDays.value     = '';
+  publishDelivery.value = '12';
+  publishError.textContent = '';
+  btnPublish.disabled   = false;
+  btnPublish.classList.remove('loading');
+  btnPublish.querySelector('.btn-publish-text').textContent = 'Publicar cuenta';
+  updatePreview();
+}
+
+// ── Save to Supabase ──
+btnPublish.addEventListener('click', async () => {
+  publishError.textContent = '';
+
+  const desc     = publishDesc.value.trim();
+  const price    = parseFloat(publishPrice.value);
+  const days     = parseInt(publishDays.value, 10);
+  const delivery = parseInt(publishDelivery.value, 10);
+
+  // Validación
+  if (!desc)          { publishError.textContent = 'La descripción es obligatoria.'; return; }
+  if (isNaN(price) || price < 0) { publishError.textContent = 'Ingresa un precio válido.'; return; }
+  if (isNaN(days) || days < 1)   { publishError.textContent = 'Ingresa la duración en días.'; return; }
+  if (!currentProduct)           { publishError.textContent = 'Error: no hay producto seleccionado.'; return; }
+
+  // UI: loading
+  btnPublish.disabled = true;
+  btnPublish.classList.add('loading');
+  btnPublish.querySelector('.btn-publish-text').textContent = 'Publicando…';
+
+  // Calcular expires_at
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + days);
+
+  const { error } = await supabase
+    .from('accounts')
+    .insert([{
+      product_id:     currentProduct.id,
+      description:    desc,
+      price:          price,
+      expires_at:     expiresAt.toISOString(),
+      delivery_hours: delivery,
+      is_available:   true
+    }]);
+
+  if (error) {
+    publishError.textContent = 'Error al publicar: ' + error.message;
+    btnPublish.disabled = false;
+    btnPublish.classList.remove('loading');
+    btnPublish.querySelector('.btn-publish-text').textContent = 'Publicar cuenta';
+    return;
+  }
+
+  // Éxito
+  closePublishSheet();
+  loadAccounts(currentProduct.id, currentProduct);
+});
+
+
 }); // fin DOMContentLoaded

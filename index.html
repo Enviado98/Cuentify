@@ -87,6 +87,13 @@
       </div>
     </div>
 
+
+  <!-- ADMIN: Botón publicar cuenta (solo visible en modo admin) -->
+  <button class="fab-publish" id="fabPublish" aria-label="Publicar cuenta">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Publicar cuenta</span>
+  </button>
+
   </div><!-- /viewDetail -->
 
   <!-- ══════════════ MODALES COMPARTIDOS ══════════════ -->
@@ -163,6 +170,91 @@
       </div>
       <button class="btn-save" id="btnSave">Guardar producto</button>
       <p class="modal-error" id="modalError"></p>
+    </div>
+  </div>
+
+  <!-- PUBLISH ACCOUNT SHEET (admin) -->
+  <div class="publish-overlay" id="publishOverlay"></div>
+  <div class="publish-sheet" id="publishSheet">
+    <div class="publish-sheet-handle"></div>
+    <div class="publish-sheet-content">
+
+      <div class="publish-sheet-header">
+        <h2 class="publish-sheet-title">Publicar cuenta</h2>
+        <button class="publish-close" id="publishCloseBtn">✕</button>
+      </div>
+
+      <div class="publish-fields">
+
+        <div class="field-group">
+          <label class="field-label">Descripción de la cuenta</label>
+          <input class="field-input" id="publishDesc" type="text"
+            placeholder="ej. Perfil 1 · Full HD · 30 días" autocomplete="off" />
+          <span class="field-hint">El cliente verá esto al elegir</span>
+        </div>
+
+        <div class="publish-row">
+          <div class="field-group">
+            <label class="field-label">Precio (MXN)</label>
+            <div class="input-prefix-wrap">
+              <span class="input-prefix">$</span>
+              <input class="field-input field-input-prefix" id="publishPrice"
+                type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Duración (días)</label>
+            <div class="input-suffix-wrap">
+              <input class="field-input field-input-suffix" id="publishDays"
+                type="number" inputmode="numeric" placeholder="30" min="1" step="1" />
+              <span class="input-suffix">días</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Entrega estimada</label>
+          <div class="select-wrapper">
+            <select class="field-input field-select" id="publishDelivery">
+              <option value="1">Inmediata (1h)</option>
+              <option value="6">Rápida (6h)</option>
+              <option value="12" selected>Estándar (12h)</option>
+              <option value="24">Normal (24h)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="publish-preview" id="publishPreview">
+          <span class="publish-preview-label">Vista previa</span>
+          <div class="publish-preview-card">
+            <div class="publish-preview-left">
+              <div class="publish-preview-name" id="pvName">—</div>
+              <div class="publish-preview-meta">
+                <span class="account-card-days" id="pvDays">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span id="pvDaysText">— días</span>
+                </span>
+                <span class="account-card-duration" id="pvDelivery">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span id="pvDeliveryText">12h entrega</span>
+                </span>
+              </div>
+            </div>
+            <div class="publish-preview-price">
+              <span class="account-card-price" id="pvPrice">$—</span>
+              <span class="account-card-currency">MXN</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="btn-publish" id="btnPublish">
+        <span class="btn-publish-text">Publicar cuenta</span>
+        <span class="btn-publish-spinner"></span>
+      </button>
+      <p class="publish-error" id="publishError"></p>
+
     </div>
   </div>
 
