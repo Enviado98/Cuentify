@@ -120,14 +120,31 @@ async function loadProducts(category) {
     return;
   }
 
-  data.forEach(product => productsGrid.appendChild(buildCard(product)));
+  // Obtener conteo real de cuentas disponibles por producto
+  const productIds = data.map(p => p.id);
+  const { data: countData } = await supabase
+    .from('accounts')
+    .select('product_id')
+    .in('product_id', productIds)
+    .eq('is_available', true);
+
+  // Mapear conteos
+  const countMap = {};
+  (countData || []).forEach(row => {
+    countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
+  });
+
+  data.forEach(product => {
+    product._accountsCount = countMap[product.id] || 0;
+    productsGrid.appendChild(buildCard(product));
+  });
 }
 
 function buildCard(product) {
   const card = document.createElement('div');
   card.className = 'product-card';
 
-  const count = product.stock ?? product.accounts_count ?? product.quantity ?? 0;
+  const count = product._accountsCount ?? 0;
   const countLabel = count === 1 ? '1 cuenta' : `${count} cuentas`;
 
   let imgHtml;
