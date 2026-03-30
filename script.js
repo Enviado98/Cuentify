@@ -105,17 +105,27 @@ function buildCard(product) {
   const card = document.createElement('div');
   card.className = 'product-card';
 
-  let thumbHtml;
+  const count = product.stock ?? product.accounts_count ?? product.quantity ?? 0;
+  const countLabel = count === 1 ? '1 cuenta' : `${count} cuentas`;
+
+  let imgHtml;
   if (product.image_url) {
-    thumbHtml = `<div class="product-thumb-wrapper"><img class="product-thumb" src="${product.image_url}" alt="${product.name}" loading="lazy" /></div>`;
+    imgHtml = `<img class="product-thumb" src="${product.image_url}" alt="${product.name}" loading="lazy" />`;
   } else {
-    thumbHtml = `<div class="product-thumb-wrapper"><div class="product-thumb-placeholder">📦</div></div>`;
+    imgHtml = `<div class="product-thumb-placeholder">📦</div>`;
   }
 
   card.innerHTML = `
-    ${thumbHtml}
-    <div class="product-info">
-      <div class="product-name">${product.name}</div>
+    <div class="product-thumb-wrapper">
+      ${imgHtml}
+      <div class="product-card-body">
+        <div class="product-name">${product.name}</div>
+        <div class="product-divider"></div>
+        <div class="product-count">
+          <span class="product-count-dot"></span>
+          ${countLabel} disponibles
+        </div>
+      </div>
     </div>
   `;
   return card;
