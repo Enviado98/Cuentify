@@ -128,7 +128,25 @@ function buildCard(product) {
       </div>
     </div>
   `;
+
+  // Open detail sheet on tap
+  card.addEventListener('click', () => openDetail(product));
+
   return card;
+}
+
+// ── PRICE HELPERS ──
+function daysRemaining(product) {
+  if (!product.expires_at) return null;
+  const diff = new Date(product.expires_at) - new Date();
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+}
+
+function calcPrice(product) {
+  if (!product.base_price) return null;
+  const days = daysRemaining(product);
+  if (days === null) return product.base_price;
+  return parseFloat(((days / 30) * product.base_price).toFixed(2));
 }
 
 // ── MENU ──
@@ -273,6 +291,111 @@ btnSave.addEventListener('click', async () => {
 
 // ── INIT ──
 loadProducts(currentTab);
+
+// ── PRODUCT DETAIL SHEET ──
+const detailOverlay   = document.getElementById('detailOverlay');
+const detailSheet     = document.getElementById('detailSheet');
+const detailImg       = document.getElementById('detailImg');
+const detailImgPlaceholder = document.getElementById('detailImgPlaceholder');
+const detailDaysBadge = document.getElementById('detailDaysBadge');
+const detailDaysText  = document.getElementById('detailDaysText');
+const detailTitle     = document.getElementById('detailTitle');
+const detailDesc      = document.getElementById('detailDesc');
+const detailSellerName = document.getElementById('detailSellerName');
+const detailRating    = document.getElementById('detailRating');
+const detailRatingCount = document.getElementById('detailRatingCount');
+const detailPrice     = document.getElementById('detailPrice');
+const detailDuration  = document.getElementById('detailDuration');
+const btnBuy          = document.getElementById('btnBuy');
+
+function openDetail(product) {
+  // Image
+  if (product.image_url) {
+    detailImg.src = product.image_url;
+    detailImg.classList.add('visible');
+    detailImgPlaceholder.style.display = 'none';
+  } else {
+    detailImg.classList.remove('visible');
+    detailImgPlaceholder.style.display = 'flex';
+  }
+
+  // Days badge
+  const days = daysRemaining(product);
+  if (days !== null) {
+    detailDaysText.textContent = `${days} día${days === 1 ? '' : 's'}`;
+    detailDaysBadge.style.display = 'inline-flex';
+  } else {
+    detailDaysBadge.style.display = 'none';
+  }
+
+  // Title & description
+  detailTitle.textContent = product.name || '—';
+  detailDesc.textContent  = product.description || product.name || '—';
+
+  // Seller
+  detailSellerName.textContent = product.seller_name || 'Digital goods';
+
+  // Rating (use stored or defaults)
+  detailRating.textContent = product.rating_pct ? `${product.rating_pct}%` : '99.85%';
+  detailRatingCount.textContent = product.rating_count ? `(${product.rating_count.toLocaleString()})` : '(2,590)';
+
+  // Price
+  const price = calcPrice(product);
+  detailPrice.textContent = price !== null
+    ? `$${price.toFixed(2)}`
+    : (product.price ? `$${parseFloat(product.price).toFixed(2)}` : '$0.00');
+
+  // Duration
+  if (days !== null) {
+    detailDuration.textContent = `${days} hora${days === 1 ? '' : 's'} de entrega`;
+  } else if (product.delivery_hours) {
+    detailDuration.textContent = `${product.delivery_hours} horas`;
+  } else {
+    detailDuration.textContent = '12 horas';
+  }
+
+  // Reset buy button
+  resetBuyBtn();
+
+  // Store product ref for purchase
+  btnBuy._product = product;
+
+  // Open sheet
+  detailSheet.classList.add('open');
+  detailOverlay.classList.add('visible');
+}
+
+function closeDetail() {
+  detailSheet.classList.remove('open');
+  detailOverlay.classList.remove('visible');
+}
+
+detailOverlay.addEventListener('click', closeDetail);
+
+// Buy button animation
+function resetBuyBtn() {
+  btnBuy.classList.remove('activated', 'ripple', 'ripple-out');
+  btnBuy.querySelector('.btn-buy-text').textContent = 'Comprar';
+  btnBuy.disabled = false;
+}
+
+btnBuy.addEventListener('click', () => {
+  if (btnBuy.classList.contains('activated')) return;
+
+  // Ripple
+  btnBuy.classList.add('ripple');
+  requestAnimationFrame(() => {
+    btnBuy.classList.add('ripple-out');
+    btnBuy.classList.remove('ripple');
+  });
+
+  // Transition to white/blue
+  btnBuy.classList.add('activated');
+  btnBuy.querySelector('.btn-buy-text').textContent = 'Procesando…';
+
+  // TODO: insert purchase logic here
+  // Example: await supabase.from('orders').insert([{ product_id: btnBuy._product.id }]);
+});
 
 // Seguridad: si el spinner sigue visible a los 8s, mostramos vacío
 setTimeout(() => {

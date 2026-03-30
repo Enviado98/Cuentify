@@ -119,6 +119,67 @@
     </div>
   </div>
 
+  <!-- PRODUCT DETAIL SHEET -->
+  <div class="detail-overlay" id="detailOverlay"></div>
+  <div class="detail-sheet" id="detailSheet">
+    <div class="detail-handle"></div>
+    <div class="detail-content">
+
+      <!-- Header: imagen + título + días -->
+      <div class="detail-header">
+        <div class="detail-img-wrap">
+          <img class="detail-img" id="detailImg" src="" alt="" />
+          <div class="detail-img-placeholder" id="detailImgPlaceholder">📦</div>
+        </div>
+        <div class="detail-header-info">
+          <div class="detail-days-badge" id="detailDaysBadge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span id="detailDaysText">—</span>
+          </div>
+          <h2 class="detail-title" id="detailTitle">—</h2>
+          <p class="detail-desc" id="detailDesc">—</p>
+        </div>
+      </div>
+
+      <div class="detail-divider"></div>
+
+      <!-- Vendedor + rating -->
+      <div class="detail-meta">
+        <div class="detail-seller">
+          <div class="detail-seller-avatar" id="detailSellerAvatar"></div>
+          <div class="detail-seller-info">
+            <span class="detail-seller-name" id="detailSellerName">Digital goods</span>
+            <span class="detail-seller-dot"></span>
+          </div>
+        </div>
+        <div class="detail-rating">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#2563EB"><path d="M7 22V11M2 13v7a1 1 0 001 1h3M17 22V11m5 2v7a1 1 0 01-1 1h-3M14 22H10M12 2l2.09 4.26L19 7.27l-3.5 3.41.83 4.82L12 13.27l-4.33 2.23.83-4.82L5 7.27l4.91-.71z"/></svg>
+          <span class="detail-rating-pct" id="detailRating">99.85%</span>
+          <span class="detail-rating-count" id="detailRatingCount">(2,590)</span>
+        </div>
+      </div>
+
+      <!-- Precio + duración -->
+      <div class="detail-pricing">
+        <div class="detail-price-block">
+          <span class="detail-price" id="detailPrice">$0.00</span>
+          <span class="detail-currency">MXN</span>
+        </div>
+        <div class="detail-duration">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="detailDuration">—</span>
+        </div>
+      </div>
+
+      <!-- Botón comprar -->
+      <button class="btn-buy" id="btnBuy">
+        <span class="btn-buy-text">Comprar</span>
+        <span class="btn-buy-spinner"></span>
+      </button>
+
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
