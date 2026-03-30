@@ -1191,3 +1191,30 @@ body {
   text-align: center;
   margin-top: 8px;
 }
+
+/* ── FAB PUBLICAR CUENTA (solo admin) ── */
+.fab-publish {
+  display: none;
+  position: fixed;
+  bottom: 88px;
+  right: 20px;
+  z-index: 80;
+  align-items: center;
+  gap: 8px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 13px 20px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.45);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.fab-publish.visible { display: flex; }
+.fab-publish:active {
+  background: var(--blue-dark);
+  transform: scale(0.97);
+}

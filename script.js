@@ -504,6 +504,7 @@ function enterAdmin() {
   isAdmin = true;
   document.body.classList.add('admin-mode');
   adminBar.classList.add('visible');
+  fabPublish.classList.add('visible');
   closeMenu();
 }
 
@@ -511,6 +512,7 @@ function exitAdmin() {
   isAdmin = false;
   document.body.classList.remove('admin-mode');
   adminBar.classList.remove('visible');
+  fabPublish.classList.remove('visible');
 }
 
 btnEntrar.addEventListener('click', enterAdmin);
