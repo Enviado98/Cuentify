@@ -1,5 +1,5 @@
 /* ==============================
-   CUENTIFY – styles.css v3
+   CUENTIFY – styles.css v4
    ============================== */
 
 *, *::before, *::after {
@@ -23,48 +23,48 @@
   --font-body: 'Nunito Sans', sans-serif;
 }
 
-html, body {
-  height: 100%;
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background-color: var(--bg);
   font-family: var(--font-body);
   color: var(--text-dark);
-  position: relative;
+  min-height: 100vh;
 }
 
 /* ══════════════════════════════════
-   VIEW NAVIGATION (push animation)
+   NAVIGATION
+   Home = flujo normal de página (scroll nativo, zoom, pull-to-refresh)
+   Detail = overlay fixed que entra por la derecha sobre el home
 ══════════════════════════════════ */
 
-.view {
-  position: absolute;
+#viewHome {
+  width: 100%;
+  transition: opacity 0.3s ease;
+}
+#viewHome.pushed {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+#viewDetail {
+  position: fixed;
   inset: 0;
-  min-height: 100%;
+  z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
+  transform: translateX(100%);
   transition: transform 0.38s cubic-bezier(0.32, 0, 0.15, 1);
   -webkit-overflow-scrolling: touch;
-}
-
-/* Home: visible by default */
-#viewHome {
-  transform: translateX(0);
-  z-index: 1;
-}
-#viewHome.pushed {
-  transform: translateX(-30%);
-}
-
-/* Detail: starts off to the right */
-#viewDetail {
-  transform: translateX(100%);
-  z-index: 2;
+  visibility: hidden;
 }
 #viewDetail.open {
   transform: translateX(0);
+  visibility: visible;
 }
 
 /* ── NAVBAR ── */
@@ -99,6 +99,9 @@ body {
 .navbar-detail {
   justify-content: space-between;
   gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .detail-navbar-title {
@@ -306,7 +309,6 @@ body {
    DETAIL VIEW
 ══════════════════════════════════ */
 
-/* Hero */
 .detail-hero {
   display: flex;
   align-items: center;
@@ -355,7 +357,6 @@ body {
   font-weight: 600;
 }
 
-/* Accounts section */
 .accounts-section {
   padding: 20px 16px 100px;
 }
@@ -375,7 +376,6 @@ body {
   gap: 12px;
 }
 
-/* Account card */
 .account-card {
   background: var(--white);
   border-radius: 18px;
@@ -394,7 +394,6 @@ body {
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
 }
 
-/* Thumbnail inside account card */
 .account-card-thumb {
   width: 52px;
   height: 52px;
@@ -468,7 +467,6 @@ body {
   font-weight: 600;
 }
 
-/* Price block on right */
 .account-card-price-wrap {
   display: flex;
   flex-direction: column;
@@ -500,7 +498,6 @@ body {
   margin-left: 4px;
 }
 
-/* Empty accounts */
 .accounts-empty {
   display: flex;
   flex-direction: column;
@@ -819,7 +816,6 @@ body {
   opacity: 0.7;
 }
 
-/* ── Buy button ── */
 .btn-buy {
   display: flex;
   align-items: center;
@@ -851,7 +847,6 @@ body {
   color: var(--blue);
 }
 
-/* Ripple */
 .btn-buy::after {
   content: '';
   position: absolute; inset: 0;
