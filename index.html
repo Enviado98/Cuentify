@@ -43,7 +43,6 @@
 
   </div><!-- /viewHome -->
 
-
   <!-- ══════════════════════════════
        VISTA 2: DETALLE + CUENTAS
   ══════════════════════════════ -->
@@ -56,7 +55,7 @@
         </svg>
       </button>
       <div class="detail-navbar-title" id="detailNavTitle">Cuentas</div>
-      <div style="width:40px"></div>
+      <div style="width:40px"></div><!-- spacer -->
     </header>
 
     <div class="detail-hero" id="detailHero">
@@ -84,7 +83,6 @@
 
   </div><!-- /viewDetail -->
 
-
   <!-- ══════════════ MODALES ══════════════ -->
 
   <!-- MENU SHEET -->
@@ -105,25 +103,17 @@
     </div>
   </div>
 
-
-  <!-- ══════════════════════════════════════
-       BUY SHEET — 3 pasos
-       Paso 1: Resumen + tipo de entrega
-       Paso 2: Método de pago
-       Paso 3a: Transferencia (datos + comprobante)
-       Paso 3b: Tarjeta
-  ══════════════════════════════════════ -->
+  <!-- COMPRA SHEET — Paso 1: Resumen | Paso 2: Pago -->
   <div class="buy-overlay" id="buyOverlay"></div>
   <div class="buy-sheet" id="buySheet">
     <div class="buy-sheet-handle"></div>
 
-
-    <!-- ── PASO 1: Resumen + datos del cliente ── -->
+    <!-- ── PASO 1: Resumen ── -->
     <div class="buy-step" id="buyStep1">
       <div class="buy-header">
         <span class="buy-header-label">Resumen del pedido</span>
         <button class="buy-close-btn" id="btnBuyCancel" aria-label="Cerrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <iconify-icon icon="lucide:x" width="18"></iconify-icon>
         </button>
       </div>
 
@@ -135,175 +125,61 @@
         </div>
       </div>
 
-      <!-- Tipo de entrega -->
-      <div class="buy-section-label">Tipo de entrega</div>
-      <div class="delivery-opts" id="deliveryOpts">
-        <button class="delivery-opt active" data-type="perfil">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Perfil</span>
-        </button>
-        <button class="delivery-opt" data-type="completa">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>Cuenta completa</span>
-        </button>
-      </div>
-
-      <!-- Campo código de TV (solo visible en perfil) -->
-      <div class="buy-field-group" id="tvCodeField">
-        <label class="buy-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
-          Código de tu TV
-        </label>
-        <input class="buy-input" id="inputTvCode" type="text"
-          placeholder="Ej. ABC-123456"
-          autocomplete="off" />
-        <span class="buy-field-hint">Encuéntralo en Ajustes → Enlazar dispositivo de tu TV</span>
-      </div>
-
-      <!-- Datos del cliente -->
-      <div class="buy-section-label">Tus datos</div>
-      <div class="buy-field-group">
-        <label class="buy-label">Nombre completo</label>
-        <input class="buy-input" id="inputCustomerName" type="text"
-          placeholder="Juan Pérez" autocomplete="name" />
-      </div>
-      <div class="buy-field-group">
-        <label class="buy-label">Correo electrónico</label>
-        <input class="buy-input" id="inputCustomerEmail" type="email"
-          placeholder="juan@correo.com" autocomplete="email" />
-        <span class="buy-field-hint">Aquí recibirás la confirmación de tu pedido</span>
-      </div>
-
       <div class="buy-price-breakdown">
         <div class="buy-price-row">
-          <span class="buy-price-label">Total</span>
+          <span class="buy-price-label">Subtotal</span>
+          <span class="buy-price-val" id="buySubtotal">$0.00</span>
+        </div>
+        <div class="buy-price-row">
+          <span class="buy-price-label">Comisión de servicio</span>
+          <span class="buy-price-val buy-price-fee" id="buyFee">$0.00</span>
+        </div>
+        <div class="buy-price-divider"></div>
+        <div class="buy-price-row buy-price-total-row">
+          <span class="buy-price-total-label">Total</span>
           <span class="buy-price-total-val" id="buySheetPrice">$0.00</span>
         </div>
       </div>
 
+      <div class="buy-security-note">
+        <iconify-icon icon="lucide:shield-check" width="15"></iconify-icon>
+        <span>Pago seguro procesado por Stripe</span>
+      </div>
+
       <button class="btn-buy-primary" id="btnGoToPayment">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        <span>Elegir método de pago</span>
+        <iconify-icon icon="lucide:credit-card" width="18"></iconify-icon>
+        <span>Continuar al pago</span>
       </button>
-    </div><!-- /buyStep1 -->
+    </div>
 
-
-    <!-- ── PASO 2: Método de pago ── -->
+    <!-- ── PASO 2: Pago ── -->
     <div class="buy-step hidden" id="buyStep2">
       <div class="buy-header">
-        <button class="buy-back-btn" id="btnBackToStep1" aria-label="Volver">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <button class="buy-back-btn" id="btnBackToSummary" aria-label="Volver">
+          <iconify-icon icon="lucide:arrow-left" width="18"></iconify-icon>
         </button>
-        <span class="buy-header-label">¿Cómo quieres pagar?</span>
+        <span class="buy-header-label">Pago seguro</span>
         <div class="buy-header-total" id="buyHeaderTotal">$0.00</div>
       </div>
 
-      <div class="pay-method-cards">
-        <button class="pay-method-card" id="payOptTransfer" data-method="transferencia">
-          <div class="pay-method-card-icon pay-method-card-icon--blue">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
-          <div class="pay-method-card-info">
-            <span class="pay-method-card-title">Transferencia bancaria</span>
-            <span class="pay-method-card-sub">SPEI · Nu México · BBVA · Azteca · Spin</span>
-          </div>
-          <svg class="pay-method-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-
-        <button class="pay-method-card" id="payOptCard" data-method="tarjeta">
-          <div class="pay-method-card-icon pay-method-card-icon--purple">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          </div>
-          <div class="pay-method-card-info">
-            <span class="pay-method-card-title">Tarjeta de crédito / débito</span>
-            <span class="pay-method-card-sub">Visa · Mastercard · Amex</span>
-          </div>
-          <svg class="pay-method-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-    </div><!-- /buyStep2 -->
-
-
-    <!-- ── PASO 3A: Transferencia ── -->
-    <div class="buy-step hidden" id="buyStep3Transfer">
-      <div class="buy-header">
-        <button class="buy-back-btn" id="btnBackToStep2FromTransfer" aria-label="Volver">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <span class="buy-header-label">Pago por transferencia</span>
-        <div class="buy-header-total" id="buyHeaderTotalTransfer">$0.00</div>
-      </div>
-
-      <div class="transfer-info-card">
-        <div class="transfer-info-title">Realiza tu transferencia a:</div>
-        <div class="transfer-info-row">
-          <span class="transfer-info-label">Banco</span>
-          <span class="transfer-info-val" id="transferBank">Nu México</span>
+      <div class="pay-method-row">
+        <div class="pay-method-opt active" id="payOptCard">
+          <iconify-icon icon="lucide:credit-card" width="16"></iconify-icon>
+          <span>Tarjeta</span>
         </div>
-        <div class="transfer-info-row">
-          <span class="transfer-info-label">Titular</span>
-          <span class="transfer-info-val" id="transferName">—</span>
-        </div>
-        <div class="transfer-info-row">
-          <span class="transfer-info-label">CLABE / Número</span>
-          <button class="transfer-clabe-copy" id="transferClabeCopy">
-            <span id="transferClabe">—</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          </button>
-        </div>
-        <div class="transfer-info-row">
-          <span class="transfer-info-label">Monto exacto</span>
-          <span class="transfer-info-val transfer-info-amount" id="transferAmount">$0.00 MXN</span>
-        </div>
-      </div>
-
-      <div class="buy-section-label">Sube tu comprobante</div>
-      <div class="comprobante-upload" id="comprobanteUpload">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>Toca para subir captura de pantalla</span>
-        <span class="comprobante-hint">JPG, PNG · Máx. 5 MB</span>
-      </div>
-      <input type="file" id="comprobanteInput" accept="image/*" style="display:none" />
-      <div class="comprobante-preview-wrap" id="comprobantePreviewWrap" style="display:none">
-        <img class="comprobante-preview" id="comprobantePreview" src="" alt="Comprobante" />
-        <button class="comprobante-remove" id="comprobanteRemove">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Cambiar
-        </button>
-      </div>
-
-      <button class="btn-buy-primary" id="btnSubmitTransfer">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span class="btn-buy-text">Enviar pedido</span>
-        <span class="btn-buy-spinner"></span>
-      </button>
-
-      <p class="transfer-footer-note">
-        Tu pedido quedará en revisión. Una vez confirmado el pago, recibirás los datos de acceso en tu correo en menos de 24h.
-      </p>
-    </div><!-- /buyStep3Transfer -->
-
-
-    <!-- ── PASO 3B: Tarjeta ── -->
-    <div class="buy-step hidden" id="buyStep3Card">
-      <div class="buy-header">
-        <button class="buy-back-btn" id="btnBackToStep2FromCard" aria-label="Volver">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <span class="buy-header-label">Pago con tarjeta</span>
-        <div class="buy-header-total" id="buyHeaderTotalCard">$0.00</div>
       </div>
 
       <div class="pay-brands">
-        <svg viewBox="0 0 48 16" width="48" height="16"><text y="14" font-size="14" font-family="sans-serif" font-weight="bold" fill="#1A1F71">VISA</text></svg>
-        <svg viewBox="0 0 38 24" width="38" height="24"><circle cx="15" cy="12" r="10" fill="#EB001B"/><circle cx="23" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.27A10 10 0 0 1 19 18.73 10 10 0 0 1 19 5.27z" fill="#FF5F00"/></svg>
+        <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
+        <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
+        <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
       </div>
 
       <div class="pay-form">
         <div class="pay-field-group">
           <label class="pay-label">Número de tarjeta</label>
           <div class="pay-input-wrap">
-            <svg class="pay-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <iconify-icon icon="lucide:credit-card" width="17" class="pay-input-icon"></iconify-icon>
             <input class="pay-input" id="cardNumber" type="text"
               inputmode="numeric" maxlength="19"
               placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
@@ -315,7 +191,7 @@
             <label class="pay-label">Vencimiento</label>
             <div class="pay-input-wrap">
               <input class="pay-input" id="cardExpiry" type="text"
-                inputmode="numeric" maxlength="7"
+                inputmode="numeric" maxlength="5"
                 placeholder="MM / AA" autocomplete="cc-exp" />
             </div>
           </div>
@@ -325,6 +201,7 @@
               <input class="pay-input" id="cardCvv" type="text"
                 inputmode="numeric" maxlength="4"
                 placeholder="•••" autocomplete="cc-csc" />
+              <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
             </div>
           </div>
         </div>
@@ -340,21 +217,21 @@
       </div>
 
       <button class="btn-buy-primary btn-pay-now" id="btnBuy">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
         <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span></span>
         <span class="btn-buy-spinner"></span>
       </button>
 
       <div class="pay-footer-badges">
-        <svg width="36" height="16" viewBox="0 0 60 26"><text y="20" font-size="20" font-family="sans-serif" font-weight="bold" fill="#635BFF">stripe</text></svg>
+        <iconify-icon icon="simple-icons:stripe" width="36" style="color:#635BFF"></iconify-icon>
         <span class="pay-footer-sep">·</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <iconify-icon icon="lucide:shield-check" width="14" style="color:#16a34a"></iconify-icon>
         <span class="pay-footer-text">Cifrado SSL 256-bit</span>
         <span class="pay-footer-sep">·</span>
         <span class="pay-footer-text">PCI DSS</span>
       </div>
-    </div><!-- /buyStep3Card -->
 
+    </div><!-- /buyStep2 -->
 
   </div><!-- /buySheet -->
 
