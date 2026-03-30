@@ -1,13 +1,23 @@
 /* ==============================
    CUENTIFY – script.js
-   Cliente puro. Sin lógica admin.
    ============================== */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-// ── SUPABASE ──
+/* ════════════════════════════════════
+   CONFIG
+════════════════════════════════════ */
+
 const SUPABASE_URL  = 'https://cfmmmrytieudxjfcfrag.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbW1tcnl0aWV1ZHhqZmNmcmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzUwMzcsImV4cCI6MjA5MDQ1MTAzN30.xMUI43qDEwgpkYotKSPY6KfAJM4Sf1ZjX4WHcgg4cS4';
+
+// ── Datos bancarios para transferencia ──
+// Cambia estos valores con tus datos reales
+const BANK_INFO = {
+  bank:  'Nu México',
+  name:  'Tu Nombre Aquí',
+  clabe: '000000000000000000',
+};
 
 if (!window.supabase) {
   console.error('Supabase SDK no cargó');
@@ -18,13 +28,23 @@ if (!window.supabase) {
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ── STATE ──
-let currentTab     = 'streaming';
-let menuOpen       = false;
-let currentProduct = null;
-let currentAccount = null;
 
-// ── ELEMENTS: HOME ──
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+
+let currentTab      = 'streaming';
+let menuOpen        = false;
+let currentProduct  = null;
+let currentAccount  = null;
+let selectedDelivery = 'perfil';   // 'perfil' | 'completa'
+let selectedMethod  = null;        // 'transferencia' | 'tarjeta'
+
+
+/* ════════════════════════════════════
+   ELEMENTOS
+════════════════════════════════════ */
+
 const viewHome        = document.getElementById('viewHome');
 const viewDetail      = document.getElementById('viewDetail');
 const navbar          = document.querySelector('#viewHome .navbar');
@@ -35,39 +55,27 @@ const productsGrid    = document.getElementById('productsGrid');
 const productsEmpty   = document.getElementById('productsEmpty');
 const productsLoading = document.getElementById('productsLoading');
 
-// ── ELEMENTS: DETAIL ──
 const backBtn               = document.getElementById('backBtn');
 const detailNavTitle        = document.getElementById('detailNavTitle');
 const detailHeroImg         = document.getElementById('detailHeroImg');
 const detailHeroPlaceholder = document.getElementById('detailHeroPlaceholder');
 const detailHeroTitle       = document.getElementById('detailHeroTitle');
-const detailHeroSub         = document.getElementById('detailHeroSub');
 const accountsList          = document.getElementById('accountsList');
 const accountsLoading       = document.getElementById('accountsLoading');
 const accountsEmpty         = document.getElementById('accountsEmpty');
 
-// ── ELEMENTS: BUY SHEET ──
-const buyOverlay       = document.getElementById('buyOverlay');
-const buySheet         = document.getElementById('buySheet');
-const buyStep1         = document.getElementById('buyStep1');
-const buyStep2         = document.getElementById('buyStep2');
-const buySheetTitle    = document.getElementById('buySheetTitle');
-const buySheetDesc     = document.getElementById('buySheetDesc');
-const buySubtotal      = document.getElementById('buySubtotal');
-const buyFee           = document.getElementById('buyFee');
-const buySheetPrice    = document.getElementById('buySheetPrice');
-const buyHeaderTotal   = document.getElementById('buyHeaderTotal');
-const btnPayAmount     = document.getElementById('btnPayAmount');
-const buyThumb         = document.getElementById('buyThumb');
-const btnBuy           = document.getElementById('btnBuy');
-const btnBuyCancel     = document.getElementById('btnBuyCancel');
-const btnGoToPayment   = document.getElementById('btnGoToPayment');
-const btnBackToSummary = document.getElementById('btnBackToSummary');
+const buyOverlay    = document.getElementById('buyOverlay');
+const buySheet      = document.getElementById('buySheet');
+const buyStep1      = document.getElementById('buyStep1');
+const buyStep2      = document.getElementById('buyStep2');
+const buyStep3T     = document.getElementById('buyStep3Transfer');
+const buyStep3C     = document.getElementById('buyStep3Card');
 
 
 /* ════════════════════════════════════
    TAB NAVIGATION
 ════════════════════════════════════ */
+
 document.querySelectorAll('.tab-item').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -94,6 +102,7 @@ document.querySelectorAll('.menu-nav-item').forEach(link => {
 /* ════════════════════════════════════
    LOAD PRODUCTS
 ════════════════════════════════════ */
+
 async function loadProducts(category) {
   productsGrid.innerHTML = '';
   productsEmpty.style.display = 'none';
@@ -117,7 +126,7 @@ async function loadProducts(category) {
     .from('accounts')
     .select('product_id')
     .in('product_id', productIds)
-    .eq('is_available', true);
+    .eq('status', 'disponible');
 
   const countMap = {};
   (countData || []).forEach(row => {
@@ -163,12 +172,11 @@ function buildCard(product) {
 /* ════════════════════════════════════
    DETAIL VIEW
 ════════════════════════════════════ */
+
 function openDetailView(product) {
   currentProduct = product;
-
   detailNavTitle.textContent  = product.name;
   detailHeroTitle.textContent = product.name;
-  detailHeroSub.textContent   = 'Elige la cuenta que más te convenga';
 
   if (product.image_url) {
     detailHeroImg.src = product.image_url;
@@ -182,7 +190,6 @@ function openDetailView(product) {
   viewDetail.classList.add('open');
   viewHome.classList.add('pushed');
   viewDetail.scrollTop = 0;
-
   loadAccounts(product.id, product);
 }
 
@@ -193,7 +200,6 @@ function closeDetailView() {
 }
 
 backBtn.addEventListener('click', closeDetailView);
-
 window.addEventListener('popstate', () => {
   if (viewDetail.classList.contains('open')) closeDetailView();
 });
@@ -202,6 +208,7 @@ window.addEventListener('popstate', () => {
 /* ════════════════════════════════════
    LOAD ACCOUNTS
 ════════════════════════════════════ */
+
 async function loadAccounts(productId, product) {
   accountsList.innerHTML = '';
   accountsEmpty.style.display = 'none';
@@ -211,7 +218,8 @@ async function loadAccounts(productId, product) {
     .from('accounts')
     .select('*')
     .eq('product_id', productId)
-    .order('expires_at', { ascending: true });
+    .eq('status', 'disponible')
+    .order('price', { ascending: true });
 
   accountsLoading.style.display = 'none';
 
@@ -231,7 +239,7 @@ function buildAccountCard(account) {
   card.className = 'account-card';
 
   const days  = daysRemaining(account);
-  const price = calcPrice(account);
+  const price = calcPrice(account) ?? parseFloat(account.price ?? 0);
 
   const thumbHtml = account._productImageUrl
     ? `<div class="account-card-thumb"><img src="${account._productImageUrl}" alt="" /></div>`
@@ -250,30 +258,23 @@ function buildAccountCard(account) {
     ${hours}h entrega
   </span>`;
 
-  const desc = account.description || (days !== null ? `Expira en ${days} días` : 'Cuenta disponible');
-
-  const priceDisplay = price !== null
-    ? `$${price.toFixed(2)}`
-    : (account.price ? `$${parseFloat(account.price).toFixed(2)}` : '$0.00');
-
   card.innerHTML = `
     ${thumbHtml}
     <div class="account-card-info">
       <div class="account-card-name">${account.description || 'Cuenta disponible'}</div>
-      <div class="account-card-desc">${desc}</div>
       <div class="account-card-meta">
         ${daysBadge}
         ${durationBadge}
       </div>
     </div>
     <div class="account-card-price-wrap">
-      <span class="account-card-price">${priceDisplay}</span>
+      <span class="account-card-price">$${price.toFixed(2)}</span>
       <span class="account-card-currency">MXN</span>
     </div>
     <svg class="account-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
   `;
 
-  card.addEventListener('click', () => openBuySheet(account, priceDisplay));
+  card.addEventListener('click', () => openBuySheet(account, price));
   return card;
 }
 
@@ -281,6 +282,7 @@ function buildAccountCard(account) {
 /* ════════════════════════════════════
    PRICE HELPERS
 ════════════════════════════════════ */
+
 function daysRemaining(item) {
   if (!item.expires_at) return null;
   const diff = new Date(item.expires_at) - new Date();
@@ -296,24 +298,41 @@ function calcPrice(item) {
 
 
 /* ════════════════════════════════════
-   BUY SHEET — 2 pasos
+   BUY SHEET — NAVEGACIÓN DE PASOS
 ════════════════════════════════════ */
-const STRIPE_FEE_RATE = 0.036;
 
-function openBuySheet(account, priceDisplay) {
-  currentAccount = account;
+const ALL_STEPS = [buyStep1, buyStep2, buyStep3T, buyStep3C];
 
-  const price    = parseFloat(account.price) || 0;
-  const fee      = parseFloat((price * STRIPE_FEE_RATE).toFixed(2));
-  const total    = parseFloat((price + fee).toFixed(2));
-  const totalFmt = `$${total.toFixed(2)}`;
+function showStep(step) {
+  ALL_STEPS.forEach(s => s.classList.add('hidden'));
+  step.classList.remove('hidden');
+  buySheet.scrollTop = 0;
+}
 
-  buySheetTitle.textContent = currentProduct ? currentProduct.name : '—';
-  buySheetDesc.textContent  = account.description || 'Cuenta disponible';
-  buySubtotal.textContent   = `$${price.toFixed(2)}`;
-  buyFee.textContent        = `$${fee.toFixed(2)}`;
-  buySheetPrice.textContent = totalFmt;
+function openBuySheet(account, price) {
+  currentAccount  = account;
+  selectedDelivery = account.delivery_type || 'perfil';
+  selectedMethod  = null;
 
+  const totalFmt = `$${price.toFixed(2)} MXN`;
+
+  // Paso 1
+  document.getElementById('buySheetTitle').textContent = currentProduct?.name || '—';
+  document.getElementById('buySheetDesc').textContent  = account.description || 'Cuenta disponible';
+  document.getElementById('buySheetPrice').textContent = totalFmt;
+  document.getElementById('buyHeaderTotal').textContent         = totalFmt;
+  document.getElementById('buyHeaderTotalTransfer').textContent = totalFmt;
+  document.getElementById('buyHeaderTotalCard').textContent     = totalFmt;
+  document.getElementById('btnPayAmount').textContent           = totalFmt;
+
+  // Transferencia info
+  document.getElementById('transferBank').textContent   = BANK_INFO.bank;
+  document.getElementById('transferName').textContent   = BANK_INFO.name;
+  document.getElementById('transferClabe').textContent  = BANK_INFO.clabe;
+  document.getElementById('transferAmount').textContent = totalFmt;
+
+  // Thumb
+  const buyThumb = document.getElementById('buyThumb');
   buyThumb.innerHTML = '';
   if (account._productImageUrl) {
     const img = document.createElement('img');
@@ -321,11 +340,18 @@ function openBuySheet(account, priceDisplay) {
     buyThumb.appendChild(img);
   }
 
-  buyHeaderTotal.textContent = totalFmt;
-  btnPayAmount.textContent   = totalFmt;
+  // Tipo de entrega
+  setDeliveryType(selectedDelivery);
 
-  showBuyStep(1);
-  resetPayForm();
+  // Limpiar campos
+  ['inputCustomerName', 'inputCustomerEmail', 'inputTvCode',
+   'cardNumber', 'cardExpiry', 'cardCvv', 'cardName'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  resetComprobanteUpload();
+
+  showStep(buyStep1);
   buySheet.classList.add('open');
   buyOverlay.classList.add('visible');
 }
@@ -334,28 +360,175 @@ function closeBuySheet() {
   buySheet.classList.remove('open');
   buyOverlay.classList.remove('visible');
   currentAccount = null;
-}
-
-function showBuyStep(n) {
-  buyStep1.classList.toggle('hidden', n !== 1);
-  buyStep2.classList.toggle('hidden', n !== 2);
-}
-
-function resetPayForm() {
-  ['cardNumber', 'cardExpiry', 'cardCvv', 'cardName'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  btnBuy.classList.remove('loading');
-  btnBuy.querySelector('.btn-buy-text').innerHTML =
-    'Pagar <span id="btnPayAmount">' + (buyHeaderTotal.textContent || '$0.00') + '</span>';
-  btnBuy.disabled = false;
+  selectedMethod = null;
 }
 
 buyOverlay.addEventListener('click', closeBuySheet);
-btnBuyCancel.addEventListener('click', closeBuySheet);
-btnGoToPayment.addEventListener('click', () => showBuyStep(2));
-btnBackToSummary.addEventListener('click', () => showBuyStep(1));
+document.getElementById('btnBuyCancel').addEventListener('click', closeBuySheet);
+
+// Paso 1 → 2
+document.getElementById('btnGoToPayment').addEventListener('click', () => {
+  const name  = document.getElementById('inputCustomerName').value.trim();
+  const email = document.getElementById('inputCustomerEmail').value.trim();
+  const code  = document.getElementById('inputTvCode').value.trim();
+
+  if (!name)  { shakeInput('inputCustomerName'); return; }
+  if (!email || !email.includes('@')) { shakeInput('inputCustomerEmail'); return; }
+  if (selectedDelivery === 'perfil' && !code) { shakeInput('inputTvCode'); return; }
+
+  showStep(buyStep2);
+});
+
+// Paso 2 → 1
+document.getElementById('btnBackToStep1').addEventListener('click', () => showStep(buyStep1));
+
+// Paso 2 → 3A o 3B
+document.getElementById('payOptTransfer').addEventListener('click', () => {
+  selectedMethod = 'transferencia';
+  showStep(buyStep3T);
+});
+document.getElementById('payOptCard').addEventListener('click', () => {
+  selectedMethod = 'tarjeta';
+  showStep(buyStep3C);
+});
+
+// Paso 3A → 2
+document.getElementById('btnBackToStep2FromTransfer').addEventListener('click', () => showStep(buyStep2));
+
+// Paso 3B → 2
+document.getElementById('btnBackToStep2FromCard').addEventListener('click', () => showStep(buyStep2));
+
+
+/* ════════════════════════════════════
+   TIPO DE ENTREGA
+════════════════════════════════════ */
+
+function setDeliveryType(type) {
+  selectedDelivery = type;
+  document.querySelectorAll('.delivery-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  const tvField = document.getElementById('tvCodeField');
+  tvField.style.display = type === 'perfil' ? 'flex' : 'none';
+}
+
+document.querySelectorAll('.delivery-opt').forEach(btn => {
+  btn.addEventListener('click', () => setDeliveryType(btn.dataset.type));
+});
+
+
+/* ════════════════════════════════════
+   COPIA CLABE
+════════════════════════════════════ */
+
+document.getElementById('transferClabeCopy').addEventListener('click', () => {
+  navigator.clipboard.writeText(BANK_INFO.clabe).then(() => {
+    const btn = document.getElementById('transferClabeCopy');
+    const original = btn.innerHTML;
+    btn.innerHTML = '¡Copiado! ✓';
+    btn.style.color = '#16a34a';
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.style.color = '';
+    }, 2000);
+  });
+});
+
+
+/* ════════════════════════════════════
+   COMPROBANTE UPLOAD
+════════════════════════════════════ */
+
+const comprobanteInput       = document.getElementById('comprobanteInput');
+const comprobanteUpload      = document.getElementById('comprobanteUpload');
+const comprobantePreviewWrap = document.getElementById('comprobantePreviewWrap');
+const comprobantePreview     = document.getElementById('comprobantePreview');
+
+function resetComprobanteUpload() {
+  comprobanteInput.value = '';
+  comprobantePreview.src = '';
+  comprobantePreviewWrap.style.display = 'none';
+  comprobanteUpload.style.display = 'flex';
+}
+
+comprobanteUpload.addEventListener('click', () => comprobanteInput.click());
+
+comprobanteInput.addEventListener('change', () => {
+  const file = comprobanteInput.files[0];
+  if (!file) return;
+  comprobantePreview.src = URL.createObjectURL(file);
+  comprobantePreviewWrap.style.display = 'flex';
+  comprobanteUpload.style.display = 'none';
+});
+
+document.getElementById('comprobanteRemove').addEventListener('click', resetComprobanteUpload);
+
+
+/* ════════════════════════════════════
+   SUBMIT: TRANSFERENCIA
+════════════════════════════════════ */
+
+document.getElementById('btnSubmitTransfer').addEventListener('click', async () => {
+  const file = comprobanteInput.files[0];
+  if (!file) {
+    comprobanteUpload.style.boxShadow = '0 0 0 2px #EF4444';
+    setTimeout(() => comprobanteUpload.style.boxShadow = '', 1500);
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitTransfer');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  try {
+    // 1. Subir comprobante a Storage
+    const ext      = file.name.split('.').pop();
+    const fileName = `comprobantes/${Date.now()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('comprobantes')
+      .upload(fileName, file);
+
+    if (uploadErr) throw uploadErr;
+
+    const { data: urlData } = supabase.storage
+      .from('comprobantes')
+      .getPublicUrl(fileName);
+
+    // 2. Crear pedido en Supabase
+    const price = calcPrice(currentAccount) ?? parseFloat(currentAccount.price ?? 0);
+    const { error: orderErr } = await supabase.from('orders').insert([{
+      account_id:      currentAccount.id,
+      product_id:      currentProduct.id,
+      customer_name:   document.getElementById('inputCustomerName').value.trim(),
+      customer_email:  document.getElementById('inputCustomerEmail').value.trim(),
+      tv_code:         selectedDelivery === 'perfil'
+                         ? document.getElementById('inputTvCode').value.trim()
+                         : null,
+      payment_method:  'transferencia',
+      comprobante_url: urlData.publicUrl,
+      total:           price,
+      delivery_type:   selectedDelivery,
+      status:          'pendiente',
+    }]);
+
+    if (orderErr) throw orderErr;
+
+    closeBuySheet();
+    showSuccessToast('transferencia');
+
+  } catch (err) {
+    console.error(err);
+    showErrorToast('Error al enviar el pedido. Intenta de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+});
+
+
+/* ════════════════════════════════════
+   SUBMIT: TARJETA (Stripe pendiente)
+════════════════════════════════════ */
 
 document.getElementById('cardNumber').addEventListener('input', function () {
   let v = this.value.replace(/\D/g, '').substring(0, 16);
@@ -370,8 +543,9 @@ document.getElementById('cardCvv').addEventListener('input', function () {
   this.value = this.value.replace(/\D/g, '').substring(0, 4);
 });
 
-btnBuy.addEventListener('click', async () => {
-  if (btnBuy.disabled) return;
+document.getElementById('btnBuy').addEventListener('click', async () => {
+  const btn    = document.getElementById('btnBuy');
+  if (btn.disabled) return;
 
   const number = document.getElementById('cardNumber').value.replace(/\s/g, '');
   const expiry = document.getElementById('cardExpiry').value;
@@ -380,17 +554,64 @@ btnBuy.addEventListener('click', async () => {
 
   if (number.length < 15) { shakeInput('cardNumber'); return; }
   if (expiry.length < 7)  { shakeInput('cardExpiry'); return; }
-  if (cvv.length < 3)     { shakeInput('cardCvv'); return; }
-  if (!name)              { shakeInput('cardName'); return; }
+  if (cvv.length < 3)     { shakeInput('cardCvv');    return; }
+  if (!name)              { shakeInput('cardName');    return; }
 
-  btnBuy.disabled = true;
-  btnBuy.classList.add('loading');
+  btn.disabled = true;
+  btn.classList.add('loading');
 
-  // TODO: Conectar Stripe aquí
+  // TODO: Integrar Stripe aquí
   await new Promise(r => setTimeout(r, 1800));
+
+  btn.disabled = false;
+  btn.classList.remove('loading');
   closeBuySheet();
-  showSuccessToast();
+  showSuccessToast('tarjeta');
 });
+
+
+/* ════════════════════════════════════
+   TOASTS
+════════════════════════════════════ */
+
+function showSuccessToast(method) {
+  const msg = method === 'transferencia'
+    ? '¡Pedido enviado! Te confirmaremos el pago en breve.'
+    : '¡Pago procesado! Recibirás los datos pronto.';
+
+  const toast = document.createElement('div');
+  toast.className = 'success-toast';
+  toast.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span>${msg}</span>
+  `;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
+function showErrorToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'success-toast success-toast--error';
+  toast.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>${msg}</span>
+  `;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+
+
+/* ════════════════════════════════════
+   SHAKE INPUT
+════════════════════════════════════ */
 
 function shakeInput(id) {
   const el = document.getElementById(id);
@@ -403,22 +624,11 @@ function shakeInput(id) {
   }, 400);
 }
 
-function showSuccessToast() {
-  const toast = document.createElement('div');
-  toast.className = 'success-toast';
-  toast.innerHTML = '<iconify-icon icon="lucide:check-circle" width="18"></iconify-icon><span>¡Pago procesado! Recibirás los datos pronto.</span>';
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 400);
-  }, 3500);
-}
-
 
 /* ════════════════════════════════════
    MENU
 ════════════════════════════════════ */
+
 function openMenu() {
   menuOpen = true;
   menuSheet.classList.add('open');
@@ -442,6 +652,7 @@ menuOverlay.addEventListener('click', closeMenu);
 /* ════════════════════════════════════
    INIT
 ════════════════════════════════════ */
+
 loadProducts(currentTab);
 
 setTimeout(() => {
