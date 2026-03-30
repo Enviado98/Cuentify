@@ -88,13 +88,22 @@ body {
 .tabs {
   border-bottom: 1.5px solid #F3F4F6;
   background: var(--white);
-  padding: 0 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tabs-list {
   list-style: none;
   display: flex;
   gap: 0;
+  padding: 0 24px;
+  width: max-content;
+  min-width: 100%;
 }
 
 .tab-item {
