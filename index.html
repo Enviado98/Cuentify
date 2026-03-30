@@ -5,187 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cuentify</title>
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
   <!-- HEADER -->
-  <header class="header" id="header">
-    <div class="header-inner">
-      <a href="#" class="logo">Cuentify</a>
-      <nav class="nav" id="nav">
-        <ul>
-          <li><a href="#">Inicio</a></li>
-          <li><a href="#">Suscripciones</a></li>
-          <li><a href="#">Recargas</a></li>
-          <li><a href="#">Juegos</a></li>
-          <li><a href="#">Soporte</a></li>
-        </ul>
-      </nav>
-      <div class="header-actions">
-        <button class="btn-login">Iniciar sesión</button>
-        <button class="hamburger" id="hamburger" aria-label="Menú">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
-    </div>
+  <header class="navbar">
+    <div class="navbar-logo">Cuentify</div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menú">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </header>
 
-  <!-- MOBILE MENU OVERLAY -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-panel" id="menuPanel">
-      <button class="menu-close" id="menuClose">✕</button>
-      <div class="menu-logo">Cuentify</div>
-      <nav class="menu-nav">
-        <a href="#">Inicio</a>
-        <a href="#">Suscripciones digitales</a>
-        <a href="#">Recargas</a>
-        <a href="#">Cuentas de Juego</a>
-        <a href="#">Ofertas</a>
-        <a href="#">Soporte</a>
-      </nav>
-      <div class="menu-footer">
-        <button class="btn-menu-login">Iniciar sesión</button>
-        <button class="btn-menu-register">Registrarse</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- HERO BANNER -->
-  <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <span class="hero-badge">✦ Nuevo</span>
-      <h1>Todo digital,<br /><em>sin complicaciones</em></h1>
-      <p>Suscripciones, recargas y cuentas de juego al mejor precio de Latinoamérica.</p>
-      <div class="hero-btns">
-        <button class="btn-primary">Explorar catálogo</button>
-        <button class="btn-ghost">Ver ofertas →</button>
-      </div>
-    </div>
-    <div class="hero-cards">
-      <div class="floating-card fc1">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" />
-      </div>
-      <div class="floating-card fc2">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg" alt="Disney+" />
-      </div>
-      <div class="floating-card fc3">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify" />
-      </div>
-    </div>
-  </section>
-
   <!-- TABS -->
-  <section class="catalog-section">
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-tab="suscripciones">Suscripción digital</button>
-      <button class="tab" data-tab="recargas">Recargas</button>
-      <button class="tab" data-tab="juegos">Cuentas de Juego</button>
-    </div>
+  <nav class="tabs">
+    <ul class="tabs-list">
+      <li class="tab-item active" data-tab="streaming">Streaming</li>
+      <li class="tab-item" data-tab="musica">Música</li>
+      <li class="tab-item" data-tab="gaming">Gaming</li>
+      <li class="tab-item" data-tab="software">Software</li>
+      <li class="tab-item" data-tab="internet">Internet</li>
+    </ul>
+  </nav>
 
-    <!-- TRENDING -->
-    <div class="section-block" id="tab-suscripciones">
-      <div class="section-header">
-        <h2>Tendencias <span class="fire">🔥</span></h2>
-      </div>
-      <div class="scroll-row">
-        <div class="product-card featured">
-          <div class="card-img" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" />
-          </div>
-          <p>Netflix</p>
-        </div>
-        <div class="product-card featured">
-          <div class="card-img" style="background: linear-gradient(135deg, #0f3460, #533483);">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg" alt="Disney+" />
-          </div>
-          <p>Disney+</p>
-        </div>
-        <div class="product-card featured">
-          <div class="card-img" style="background: linear-gradient(135deg, #1db954, #0a7d35);">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify" />
-          </div>
-          <p>Spotify</p>
-        </div>
-      </div>
-
-      <!-- SVOD -->
-      <div class="section-header" style="margin-top:2rem">
-        <h2>SVOD</h2>
-      </div>
-      <div class="grid-products">
-        <div class="product-card">
-          <div class="card-img dark"><span class="card-label">Prime<br/>Video</span></div>
-          <p>Prime Video</p>
-        </div>
-        <div class="product-card">
-          <div class="card-img red"><span class="card-label">NEFX 4K</span></div>
-          <p>Netflix</p>
-          <span class="coupon-tag">CUPÓN</span>
-        </div>
-        <div class="product-card">
-          <div class="card-img teal"><span class="card-label">Disney+</span></div>
-          <p>Disney+</p>
-        </div>
-        <div class="product-card">
-          <div class="card-img black"><span class="card-label">Apple</span></div>
-          <p>Apple TV+</p>
-        </div>
-        <div class="product-card">
-          <div class="card-img red2"><span class="card-label">YouTube</span></div>
-          <p>YouTube Premium</p>
-        </div>
-        <div class="product-card">
-          <div class="card-img orange"><span class="card-label">Crunchyroll</span></div>
-          <p>Crunchyroll</p>
-          <span class="coupon-tag">CUPÓN</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="section-block hidden" id="tab-recargas">
-      <div class="section-header">
-        <h2>Recargas disponibles <span>💳</span></h2>
-      </div>
-      <div class="grid-products">
-        <div class="product-card"><div class="card-img blue2"><span class="card-label">PayPal</span></div><p>PayPal</p></div>
-        <div class="product-card"><div class="card-img green2"><span class="card-label">Steam</span></div><p>Steam Wallet</p></div>
-        <div class="product-card"><div class="card-img purple"><span class="card-label">PlayStation</span></div><p>PSN</p></div>
-      </div>
-    </div>
-
-    <div class="section-block hidden" id="tab-juegos">
-      <div class="section-header">
-        <h2>Cuentas de Juego <span>🎮</span></h2>
-      </div>
-      <div class="grid-products">
-        <div class="product-card"><div class="card-img dark2"><span class="card-label">Xbox</span></div><p>Xbox Game Pass</p></div>
-        <div class="product-card"><div class="card-img gold"><span class="card-label">EA Play</span></div><p>EA Play</p></div>
-        <div class="product-card"><div class="card-img blue3"><span class="card-label">Epic</span></div><p>Epic Games</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PROMO BANNER -->
-  <section class="promo-banner">
-    <div class="promo-inner">
-      <div class="promo-text">
-        <span class="promo-label">Oferta limitada</span>
-        <h3>Paga en tu moneda local.<br />Recibe en segundos.</h3>
-        <p>MXN · COP · CLP · ARS · PEN y más</p>
-        <button class="btn-primary">Ver promociones</button>
-      </div>
-      <div class="promo-visual">
-        <div class="currency-pill">MXN</div>
-        <div class="currency-pill delay1">COP</div>
-        <div class="currency-pill delay2">CLP</div>
-        <div class="currency-pill delay3">ARS</div>
-      </div>
-    </div>
-  </section>
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <!-- Content will go here -->
+  </main>
 
   <script src="script.js"></script>
 </body>
