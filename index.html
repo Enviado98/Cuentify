@@ -258,26 +258,142 @@
     </div>
   </div>
 
-  <!-- COMPRA CONFIRMACIÓN SHEET -->
+  <!-- COMPRA SHEET — Paso 1: Resumen | Paso 2: Pago -->
   <div class="buy-overlay" id="buyOverlay"></div>
   <div class="buy-sheet" id="buySheet">
     <div class="buy-sheet-handle"></div>
-    <div class="buy-sheet-content">
-      <div class="buy-sheet-icon">🛒</div>
-      <h3 class="buy-sheet-title" id="buySheetTitle">Confirmar compra</h3>
-      <p class="buy-sheet-desc" id="buySheetDesc">—</p>
-      <div class="buy-sheet-price-row">
-        <span class="buy-sheet-price" id="buySheetPrice">$0.00</span>
-        <span class="buy-sheet-currency">MXN</span>
+
+    <!-- ── PASO 1: Resumen ── -->
+    <div class="buy-step" id="buyStep1">
+      <div class="buy-header">
+        <span class="buy-header-label">Resumen del pedido</span>
+        <button class="buy-close-btn" id="btnBuyCancel" aria-label="Cerrar">
+          <iconify-icon icon="lucide:x" width="18"></iconify-icon>
+        </button>
       </div>
-      <button class="btn-buy" id="btnBuy">
-        <span class="btn-buy-text">Comprar ahora</span>
+
+      <div class="buy-product-row">
+        <div class="buy-product-thumb" id="buyThumb"></div>
+        <div class="buy-product-info">
+          <div class="buy-product-name" id="buySheetTitle">—</div>
+          <div class="buy-product-desc" id="buySheetDesc">—</div>
+        </div>
+      </div>
+
+      <div class="buy-price-breakdown">
+        <div class="buy-price-row">
+          <span class="buy-price-label">Subtotal</span>
+          <span class="buy-price-val" id="buySubtotal">$0.00</span>
+        </div>
+        <div class="buy-price-row">
+          <span class="buy-price-label">Comisión de servicio</span>
+          <span class="buy-price-val buy-price-fee" id="buyFee">$0.00</span>
+        </div>
+        <div class="buy-price-divider"></div>
+        <div class="buy-price-row buy-price-total-row">
+          <span class="buy-price-total-label">Total</span>
+          <span class="buy-price-total-val" id="buySheetPrice">$0.00</span>
+        </div>
+      </div>
+
+      <div class="buy-security-note">
+        <iconify-icon icon="lucide:shield-check" width="15"></iconify-icon>
+        <span>Pago seguro procesado por Stripe</span>
+      </div>
+
+      <button class="btn-buy-primary" id="btnGoToPayment">
+        <iconify-icon icon="lucide:credit-card" width="18"></iconify-icon>
+        <span>Continuar al pago</span>
+      </button>
+    </div>
+
+    <!-- ── PASO 2: Pago ── -->
+    <div class="buy-step hidden" id="buyStep2">
+      <div class="buy-header">
+        <button class="buy-back-btn" id="btnBackToSummary" aria-label="Volver">
+          <iconify-icon icon="lucide:arrow-left" width="18"></iconify-icon>
+        </button>
+        <span class="buy-header-label">Pago seguro</span>
+        <div class="buy-header-total" id="buyHeaderTotal">$0.00</div>
+      </div>
+
+      <!-- Selector de método -->
+      <div class="pay-method-row">
+        <div class="pay-method-opt active" id="payOptCard">
+          <iconify-icon icon="lucide:credit-card" width="16"></iconify-icon>
+          <span>Tarjeta</span>
+        </div>
+      </div>
+
+      <!-- Card brands -->
+      <div class="pay-brands">
+        <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
+        <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
+        <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
+      </div>
+
+      <!-- Formulario tarjeta -->
+      <div class="pay-form">
+        <div class="pay-field-group">
+          <label class="pay-label">Número de tarjeta</label>
+          <div class="pay-input-wrap">
+            <iconify-icon icon="lucide:credit-card" width="17" class="pay-input-icon"></iconify-icon>
+            <input class="pay-input" id="cardNumber" type="text"
+              inputmode="numeric" maxlength="19"
+              placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+          </div>
+        </div>
+
+        <div class="pay-row">
+          <div class="pay-field-group">
+            <label class="pay-label">Vencimiento</label>
+            <div class="pay-input-wrap">
+              <input class="pay-input" id="cardExpiry" type="text"
+                inputmode="numeric" maxlength="5"
+                placeholder="MM / AA" autocomplete="cc-exp" />
+            </div>
+          </div>
+          <div class="pay-field-group">
+            <label class="pay-label">CVV</label>
+            <div class="pay-input-wrap">
+              <input class="pay-input" id="cardCvv" type="text"
+                inputmode="numeric" maxlength="4"
+                placeholder="•••" autocomplete="cc-csc" />
+              <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
+            </div>
+          </div>
+        </div>
+
+        <div class="pay-field-group">
+          <label class="pay-label">Nombre en la tarjeta</label>
+          <div class="pay-input-wrap">
+            <input class="pay-input" id="cardName" type="text"
+              placeholder="Como aparece en la tarjeta"
+              autocomplete="cc-name" style="text-transform:uppercase;" />
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-buy-primary btn-pay-now" id="btnBuy">
+        <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
+        <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span></span>
         <span class="btn-buy-spinner"></span>
       </button>
-      <button class="btn-buy-cancel" id="btnBuyCancel">Cancelar</button>
-    </div>
-  </div>
 
+      <div class="pay-footer-badges">
+        <iconify-icon icon="simple-icons:stripe" width="36" style="color:#635BFF"></iconify-icon>
+        <span class="pay-footer-sep">·</span>
+        <iconify-icon icon="lucide:shield-check" width="14" style="color:#16a34a"></iconify-icon>
+        <span class="pay-footer-text">Cifrado SSL 256-bit</span>
+        <span class="pay-footer-sep">·</span>
+        <span class="pay-footer-text">PCI DSS</span>
+      </div>
+
+    </div><!-- /buyStep2 -->
+
+  </div><!-- /buySheet -->
+
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
