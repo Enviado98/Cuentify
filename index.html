@@ -35,6 +35,35 @@
     <!-- Content will go here -->
   </main>
 
+  <!-- MENU SHEET (bottom-up panel) -->
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <div class="menu-sheet" id="menuSheet">
+    <div class="menu-sheet-handle"></div>
+    <div class="menu-sheet-content">
+      <div class="menu-sheet-header">
+        <span class="menu-sheet-logo">Cuentify</span>
+      </div>
+      <div class="menu-auth-section">
+        <p class="menu-auth-hint">Accede a tu cuenta para gestionar tus servicios</p>
+        <button class="btn-entrar" id="btnEntrar">Entrar</button>
+        <!-- Future: Google OAuth button will go here -->
+      </div>
+      <nav class="menu-nav">
+        <a href="#" class="menu-nav-item">Streaming</a>
+        <a href="#" class="menu-nav-item">Música</a>
+        <a href="#" class="menu-nav-item">Gaming</a>
+        <a href="#" class="menu-nav-item">Software</a>
+        <a href="#" class="menu-nav-item">Internet</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ADMIN BAR (shown when in admin mode) -->
+  <div class="admin-bar" id="adminBar">
+    <span class="admin-bar-label">● Modo Admin</span>
+    <button class="admin-bar-exit" id="adminExitBtn">Salir</button>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
