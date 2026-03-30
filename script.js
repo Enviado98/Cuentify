@@ -625,19 +625,75 @@ modalOverlay.addEventListener('click', closeModal);
 
 
 /* ════════════════════════════════════
-   IMAGE UPLOAD
+   IMAGE UPLOAD + COMPRESIÓN
 ════════════════════════════════════ */
+const MAX_BYTES = 20 * 1024; // 20 KB
+const MAX_DIM   = 200;       // px — suficiente para una card thumbnail
+const ACCEPTED  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!ACCEPTED.includes(file.type)) {
+      reject(new Error('Formato no soportado. Usa JPG, PNG o WebP.'));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('No se pudo leer la imagen.'));
+    };
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      // Escalar manteniendo aspecto
+      let { width, height } = img;
+      if (width > height) { height = Math.round(height * MAX_DIM / width);  width  = MAX_DIM; }
+      else                { width  = Math.round(width  * MAX_DIM / height); height = MAX_DIM; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      // Bajar calidad hasta caber en MAX_BYTES
+      let quality = 0.85;
+      const tryEncode = () => {
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error('Error al comprimir la imagen.')); return; }
+          if (blob.size > MAX_BYTES && quality > 0.1) {
+            quality = Math.max(0.1, quality - 0.1);
+            tryEncode();
+          } else {
+            resolve(new File([blob], 'img.jpg', { type: 'image/jpeg' }));
+          }
+        }, 'image/jpeg', quality);
+      };
+      tryEncode();
+    };
+
+    img.src = objectUrl;
+  });
+}
+
 imgUploadArea.addEventListener('click', () => imgInput.click());
 
-imgInput.addEventListener('change', () => {
+imgInput.addEventListener('change', async () => {
   const file = imgInput.files[0];
   if (!file) return;
-  selectedFile = file;
-  const url = URL.createObjectURL(file);
-  imgPreview.src = url;
-  imgPreview.classList.add('visible');
-  imgPlaceholder.style.display = 'none';
-  imgUploadArea.classList.add('has-image');
+  try {
+    selectedFile = await compressImage(file);
+    imgPreview.src = URL.createObjectURL(selectedFile);
+    imgPreview.classList.add('visible');
+    imgPlaceholder.style.display = 'none';
+    imgUploadArea.classList.add('has-image');
+  } catch (err) {
+    imgInput.value = '';
+    modalError.textContent = err.message;
+  }
 });
 
 
@@ -657,8 +713,7 @@ btnSave.addEventListener('click', async () => {
   let image_url = editingProduct ? editingProduct.image_url : null;
 
   if (selectedFile) {
-    const ext  = selectedFile.name.split('.').pop();
-    const path = `${category}/${Date.now()}.${ext}`;
+    const path = `${category}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')
