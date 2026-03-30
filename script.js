@@ -107,9 +107,9 @@ function buildCard(product) {
 
   let thumbHtml;
   if (product.image_url) {
-    thumbHtml = `<img class="product-thumb" src="${product.image_url}" alt="${product.name}" loading="lazy" />`;
+    thumbHtml = `<div class="product-thumb-wrapper"><img class="product-thumb" src="${product.image_url}" alt="${product.name}" loading="lazy" /></div>`;
   } else {
-    thumbHtml = `<div class="product-thumb-placeholder">📦</div>`;
+    thumbHtml = `<div class="product-thumb-wrapper"><div class="product-thumb-placeholder">📦</div></div>`;
   }
 
   card.innerHTML = `
