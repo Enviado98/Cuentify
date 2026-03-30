@@ -143,8 +143,15 @@ body {
 /* ── PRODUCTS GRID ── */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  /*
+   * auto-fill: crea tantas columnas como quepan.
+   * minmax(min, 1fr): cada columna tiene al menos 'min' px y crece igual.
+   * Con min ≈ 100px → pantalla normal (~375px) cabe ~3 columnas (3×100=300).
+   * Al hacer zoom o usar fuente grande las columnas no caben → bajan a 2 o 1.
+   * En tablet/desktop (~768px+) suben a 5-7 columnas automáticamente.
+   */
+  grid-template-columns: repeat(auto-fill, minmax(clamp(90px, 28vw, 160px), 1fr));
+  gap: clamp(8px, 2vw, 16px);
 }
 
 .product-card {
@@ -181,19 +188,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 5vw, 2.5rem);
   color: #fff;
 }
 
 /* Zona inferior dentro del marco */
 .product-card-body {
-  padding: 8px 10px 9px;
+  padding: clamp(6px, 2vw, 10px) clamp(6px, 2vw, 10px) clamp(7px, 2vw, 10px);
 }
 
 .product-name {
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: clamp(0.65rem, 2vw, 0.85rem);
   color: var(--text-dark);
   white-space: nowrap;
   overflow: hidden;
@@ -214,7 +221,7 @@ body {
   align-items: center;
   gap: 5px;
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: clamp(0.6rem, 1.8vw, 0.75rem);
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
