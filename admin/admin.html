@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuentify Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════
+       SIDEBAR
+  ══════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="sidebar-logo-text">Cuentify</span>
+      <span class="sidebar-logo-badge">Admin</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-section="productos">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Productos</span>
+      </a>
+      <a href="#" class="nav-item" data-section="cuentas">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Cuentas</span>
+      </a>
+      <a href="#" class="nav-item" data-section="pedidos">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Pedidos</span>
+      </a>
+      <a href="#" class="nav-item" data-section="clientes">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="nav-item" data-section="configuracion">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M17.66 6.34a8 8 0 0 1 0 11.32M6.34 6.34a8 8 0 0 0 0 11.32"/></svg>
+        <span>Configuración</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-view-store" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <span>Ver tienda</span>
+      </a>
+      <div class="sidebar-admin-info">
+        <div class="sidebar-avatar">A</div>
+        <div class="sidebar-admin-meta">
+          <span class="sidebar-admin-name">Administrador</span>
+          <span class="sidebar-admin-role">Super Admin</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════
+       MAIN
+  ══════════════════════════════ -->
+  <main class="main" id="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <button class="topbar-menu-btn" id="sidebarToggle" aria-label="Menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-notif" id="notifBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════ SECTION: DASHBOARD ══════ -->
+    <section class="section active" id="section-dashboard">
+      <div class="section-header">
+        <h1 class="section-title">Dashboard</h1>
+        <span class="section-sub">Resumen general de la tienda</span>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Pedidos hoy</span>
+            <span class="stat-value">—</span>
+            <span class="stat-change stat-change--up">+0% vs ayer</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Ingresos hoy</span>
+            <span class="stat-value">$—</span>
+            <span class="stat-change stat-change--up">+0% vs ayer</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Productos activos</span>
+            <span class="stat-value">—</span>
+            <span class="stat-change stat-change--neutral">Sin cambios</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Cuentas disponibles</span>
+            <span class="stat-value">—</span>
+            <span class="stat-change stat-change--down">Revisar stock</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart + recent orders -->
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Ingresos últimos 7 días</span>
+            <span class="card-badge">MXN</span>
+          </div>
+          <div class="chart-placeholder">
+            <div class="chart-bars">
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:40%"></div><span>L</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:65%"></div><span>M</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:50%"></div><span>X</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:80%"></div><span>J</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:55%"></div><span>V</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar chart-bar--active" style="height:90%"></div><span>S</span></div>
+              <div class="chart-bar-wrap"><div class="chart-bar" style="height:30%"></div><span>D</span></div>
+            </div>
+            <p class="chart-note">Conecta Supabase para ver datos reales</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Últimos pedidos</span>
+            <button class="card-link" data-goto="pedidos">Ver todos</button>
+          </div>
+          <div class="mini-table">
+            <div class="mini-table-row mini-table-head">
+              <span>Cliente</span>
+              <span>Producto</span>
+              <span>Estado</span>
+              <span>Total</span>
+            </div>
+            <div class="mini-table-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+              <p>Sin pedidos todavía</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock alert -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Alertas de stock</span>
+          <button class="card-link" data-goto="cuentas">Gestionar cuentas</button>
+        </div>
+        <div class="alert-list">
+          <div class="alert-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <p>Todo el stock en orden</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══════ SECTION: PRODUCTOS ══════ -->
+    <section class="section" id="section-productos">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Productos</h1>
+          <span class="section-sub">Gestiona el catálogo de la tienda</span>
+        </div>
+        <button class="btn-primary" id="btnNuevoProducto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo producto
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters-bar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todos</button>
+          <button class="filter-tab" data-filter="streaming">Streaming</button>
+          <button class="filter-tab" data-filter="musica">Música</button>
+          <button class="filter-tab" data-filter="gaming">Gaming</button>
+          <button class="filter-tab" data-filter="software">Software</button>
+          <button class="filter-tab" data-filter="internet">Internet</button>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar producto…" class="search-input" id="searchProductos" />
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card table-card">
+        <div class="data-table">
+          <div class="data-table-head">
+            <div class="col-thumb"></div>
+            <div class="col-name">Producto</div>
+            <div class="col-cat">Categoría</div>
+            <div class="col-stock">Stock</div>
+            <div class="col-date">Creado</div>
+            <div class="col-actions">Acciones</div>
+          </div>
+          <div class="data-table-empty" id="productosEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <p>No hay productos. Crea el primero.</p>
+          </div>
+          <div class="data-table-body" id="productosTableBody">
+            <!-- filas JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══════ SECTION: CUENTAS ══════ -->
+    <section class="section" id="section-cuentas">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Cuentas</h1>
+          <span class="section-sub">Stock de cuentas por producto</span>
+        </div>
+        <button class="btn-primary" id="btnNuevaCuenta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Publicar cuenta
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters-bar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todas</button>
+          <button class="filter-tab" data-filter="disponible">Disponibles</button>
+          <button class="filter-tab" data-filter="vendida">Vendidas</button>
+          <button class="filter-tab" data-filter="expirada">Expiradas</button>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar cuenta…" class="search-input" />
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="data-table">
+          <div class="data-table-head">
+            <div class="col-name">Descripción</div>
+            <div class="col-cat">Producto</div>
+            <div class="col-price">Precio</div>
+            <div class="col-date">Vence</div>
+            <div class="col-status">Estado</div>
+            <div class="col-actions">Acciones</div>
+          </div>
+          <div class="data-table-empty" id="cuentasEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <p>No hay cuentas publicadas todavía.</p>
+          </div>
+          <div class="data-table-body" id="cuentasTableBody">
+            <!-- filas JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══════ SECTION: PEDIDOS ══════ -->
+    <section class="section" id="section-pedidos">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Pedidos</h1>
+          <span class="section-sub">Historial de ventas y entregas</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters-bar">
+        <div class="filter-tabs">
+          <button class="filter-tab active">Todos</button>
+          <button class="filter-tab">Pendientes</button>
+          <button class="filter-tab">Completados</button>
+          <button class="filter-tab">Cancelados</button>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Buscar por cliente o ID…" class="search-input" />
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="data-table">
+          <div class="data-table-head">
+            <div class="col-id"># Pedido</div>
+            <div class="col-name">Cliente</div>
+            <div class="col-cat">Producto</div>
+            <div class="col-price">Total</div>
+            <div class="col-date">Fecha</div>
+            <div class="col-status">Estado</div>
+            <div class="col-actions">Acciones</div>
+          </div>
+          <div class="data-table-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <p>Aún no hay pedidos registrados.</p>
+          </div>
+          <div class="data-table-body" id="pedidosTableBody"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══════ SECTION: CLIENTES ══════ -->
+    <section class="section" id="section-clientes">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Clientes</h1>
+          <span class="section-sub">Base de compradores registrados</span>
+        </div>
+        <button class="btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar
+        </button>
+      </div>
+
+      <div class="stats-grid stats-grid--3">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Total clientes</span>
+            <span class="stat-value">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Compradores activos</span>
+            <span class="stat-value">—</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Clientes recurrentes</span>
+            <span class="stat-value">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="data-table">
+          <div class="data-table-head">
+            <div class="col-name">Cliente</div>
+            <div class="col-cat">Email</div>
+            <div class="col-stock">Pedidos</div>
+            <div class="col-price">Total gastado</div>
+            <div class="col-date">Registro</div>
+            <div class="col-actions">Acciones</div>
+          </div>
+          <div class="data-table-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>Aún no hay clientes registrados.</p>
+          </div>
+          <div class="data-table-body" id="clientesTableBody"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ══════ SECTION: CONFIGURACIÓN ══════ -->
+    <section class="section" id="section-configuracion">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Configuración</h1>
+          <span class="section-sub">Ajustes generales de la tienda</span>
+        </div>
+      </div>
+
+      <div class="config-grid">
+
+        <div class="card config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon config-card-icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div>
+              <h3 class="config-card-title">Tienda</h3>
+              <p class="config-card-sub">Nombre, logo y descripción</p>
+            </div>
+          </div>
+          <div class="config-fields">
+            <div class="config-field">
+              <label>Nombre de la tienda</label>
+              <input type="text" value="Cuentify" class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Descripción corta</label>
+              <input type="text" placeholder="Servicios digitales al mejor precio" class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Email de contacto</label>
+              <input type="email" placeholder="contacto@cuentify.com" class="field-input" />
+            </div>
+          </div>
+          <button class="btn-save-config">Guardar cambios</button>
+        </div>
+
+        <div class="card config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon config-card-icon--green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <h3 class="config-card-title">Pagos</h3>
+              <p class="config-card-sub">Stripe y métodos de pago</p>
+            </div>
+          </div>
+          <div class="config-fields">
+            <div class="config-field">
+              <label>Stripe Public Key</label>
+              <input type="text" placeholder="pk_live_..." class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Stripe Secret Key</label>
+              <input type="password" placeholder="sk_live_..." class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Comisión de servicio (%)</label>
+              <input type="number" value="3.6" step="0.1" class="field-input" />
+            </div>
+          </div>
+          <button class="btn-save-config">Guardar cambios</button>
+        </div>
+
+        <div class="card config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon config-card-icon--purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div>
+              <h3 class="config-card-title">Notificaciones</h3>
+              <p class="config-card-sub">Alertas y emails automáticos</p>
+            </div>
+          </div>
+          <div class="config-fields">
+            <div class="config-toggle-row">
+              <div>
+                <span class="toggle-label">Email al comprador tras pago</span>
+                <span class="toggle-sub">Enviar confirmación automática</span>
+              </div>
+              <button class="toggle active" data-toggled="true">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="config-toggle-row">
+              <div>
+                <span class="toggle-label">Alerta de stock bajo</span>
+                <span class="toggle-sub">Cuando queden menos de 2 cuentas</span>
+              </div>
+              <button class="toggle active" data-toggled="true">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="config-toggle-row">
+              <div>
+                <span class="toggle-label">Resumen diario por email</span>
+                <span class="toggle-sub">Ventas del día a las 8pm</span>
+              </div>
+              <button class="toggle" data-toggled="false">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+          </div>
+          <button class="btn-save-config">Guardar cambios</button>
+        </div>
+
+        <div class="card config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon config-card-icon--orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <h3 class="config-card-title">Acceso Admin</h3>
+              <p class="config-card-sub">Seguridad y credenciales</p>
+            </div>
+          </div>
+          <div class="config-fields">
+            <div class="config-field">
+              <label>Email del administrador</label>
+              <input type="email" placeholder="admin@cuentify.com" class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Nueva contraseña</label>
+              <input type="password" placeholder="••••••••" class="field-input" />
+            </div>
+            <div class="config-field">
+              <label>Confirmar contraseña</label>
+              <input type="password" placeholder="••••••••" class="field-input" />
+            </div>
+          </div>
+          <button class="btn-save-config">Actualizar acceso</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main><!-- /main -->
+
+  <!-- ══════ SIDEBAR OVERLAY (mobile) ══════ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+
+  <!-- ══════════════════════════════
+       MODAL: PRODUCTO
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modalProductoOverlay"></div>
+  <div class="modal" id="modalProducto">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalProductoTitle">Nuevo producto</h2>
+      <button class="modal-close" id="modalProductoClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="img-upload-area" id="imgUploadAreaProducto">
+        <input type="file" id="imgInputProducto" accept="image/*" hidden />
+        <div class="img-upload-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span>Clic para subir imagen</span>
+        </div>
+        <img class="img-preview" id="imgPreviewProducto" src="" alt="" />
+      </div>
+      <div class="modal-fields">
+        <div class="field-group">
+          <label class="field-label">Nombre del producto</label>
+          <input class="field-input" type="text" placeholder="ej. Netflix Premium" id="inputProductoNombre" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Categoría</label>
+          <div class="select-wrapper">
+            <select class="field-input field-select" id="inputProductoCat">
+              <option value="streaming">Streaming</option>
+              <option value="musica">Música</option>
+              <option value="gaming">Gaming</option>
+              <option value="software">Software</option>
+              <option value="internet">Internet</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalProductoCancelBtn">Cancelar</button>
+      <button class="btn-primary" id="modalProductoSaveBtn">Guardar producto</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════
+       MODAL: CUENTA
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modalCuentaOverlay"></div>
+  <div class="modal" id="modalCuenta">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalCuentaTitle">Publicar cuenta</h2>
+      <button class="modal-close" id="modalCuentaClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-fields">
+        <div class="field-group">
+          <label class="field-label">Producto asociado</label>
+          <div class="select-wrapper">
+            <select class="field-input field-select" id="inputCuentaProducto">
+              <option value="">— Selecciona un producto —</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Descripción</label>
+          <input class="field-input" type="text" placeholder="ej. Perfil 1 · Full HD · 30 días" id="inputCuentaDesc" />
+          <span class="field-hint">El cliente verá esto al elegir</span>
+        </div>
+        <div class="modal-row">
+          <div class="field-group">
+            <label class="field-label">Precio (MXN)</label>
+            <div class="input-prefix-wrap">
+              <span class="input-prefix">$</span>
+              <input class="field-input field-input-prefix" type="number" placeholder="0.00" id="inputCuentaPrecio" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Duración (días)</label>
+            <div class="input-suffix-wrap">
+              <input class="field-input field-input-suffix" type="number" placeholder="30" id="inputCuentaDias" />
+              <span class="input-suffix">días</span>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Entrega estimada</label>
+          <div class="select-wrapper">
+            <select class="field-input field-select" id="inputCuentaEntrega">
+              <option value="1">Inmediata (1h)</option>
+              <option value="6">Rápida (6h)</option>
+              <option value="12" selected>Estándar (12h)</option>
+              <option value="24">Normal (24h)</option>
+            </select>
+          </div>
+        </div>
+        <!-- Credenciales (solo visible internamente) -->
+        <div class="field-group">
+          <label class="field-label">
+            Email / usuario de la cuenta
+            <span class="field-label-private">🔒 Privado</span>
+          </label>
+          <input class="field-input" type="text" placeholder="usuario@servicio.com" id="inputCuentaEmail" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">
+            Contraseña
+            <span class="field-label-private">🔒 Privado</span>
+          </label>
+          <input class="field-input" type="password" placeholder="••••••••" id="inputCuentaPass" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalCuentaCancelBtn">Cancelar</button>
+      <button class="btn-primary" id="modalCuentaSaveBtn">Publicar cuenta</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════
+       MODAL: DETALLE PEDIDO
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modalPedidoOverlay"></div>
+  <div class="modal" id="modalPedido">
+    <div class="modal-header">
+      <h2 class="modal-title">Detalle del pedido</h2>
+      <button class="modal-close" id="modalPedidoClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="pedido-detail-placeholder">
+        <p class="pedido-detail-id"># —</p>
+        <div class="pedido-detail-rows">
+          <div class="pedido-detail-row"><span>Cliente</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Producto</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Cuenta entregada</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Total</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Fecha</span><span>—</span></div>
+          <div class="pedido-detail-row"><span>Estado</span><span class="status-badge status-badge--pending">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modalPedidoClose2">Cerrar</button>
+      <button class="btn-primary">Marcar como completado</button>
+    </div>
+  </div>
+
+
+  <!-- ══════ TOAST ══════ -->
+  <div class="toast" id="toast"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
