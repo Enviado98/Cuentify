@@ -2,9 +2,19 @@
    CUENTIFY – script.js
    ============================== */
 
+document.addEventListener('DOMContentLoaded', () => {
+
 // ── SUPABASE ──
 const SUPABASE_URL  = 'https://cfmmmrytieudxjfcfrag.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbW1tcnl0aWV1ZHhqZmNmcmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzUwMzcsImV4cCI6MjA5MDQ1MTAzN30.xMUI43qDEwgpkYotKSPY6KfAJM4Sf1ZjX4WHcgg4cS4';
+
+if (!window.supabase) {
+  console.error('Supabase SDK no cargó');
+  document.getElementById('productsLoading').style.display = 'none';
+  document.getElementById('productsEmpty').style.display = 'block';
+  return;
+}
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── STATE ──
@@ -77,6 +87,7 @@ async function loadProducts(category) {
 
   if (error) {
     console.error('Error cargando productos:', error);
+    productsEmpty.style.display = 'block';
     return;
   }
 
@@ -252,3 +263,13 @@ btnSave.addEventListener('click', async () => {
 
 // ── INIT ──
 loadProducts(currentTab);
+
+// Seguridad: si el spinner sigue visible a los 8s, mostramos vacío
+setTimeout(() => {
+  if (productsLoading.style.display !== 'none') {
+    productsLoading.style.display = 'none';
+    productsEmpty.style.display = 'block';
+  }
+}, 8000);
+
+}); // fin DOMContentLoaded
