@@ -9,16 +9,13 @@
 </head>
 <body>
 
-  <!-- ══════════════════════════════
-       SIDEBAR
-  ══════════════════════════════ -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <span class="sidebar-logo-text">Cuentify</span>
       <span class="sidebar-logo-badge">Admin</span>
     </div>
-
     <nav class="sidebar-nav">
       <a href="#" class="nav-item active" data-section="productos">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -38,7 +35,6 @@
         <span>Datos bancarios</span>
       </a>
     </nav>
-
     <div class="sidebar-footer">
       <a href="../index.html" class="sidebar-view-store" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -47,222 +43,163 @@
     </div>
   </aside>
 
-  <!-- ══════════════════════════════
-       MAIN
-  ══════════════════════════════ -->
-  <main class="main" id="main">
-
-    <!-- TOP BAR -->
+  <div class="layout">
     <header class="topbar">
       <button class="topbar-menu-btn" id="sidebarToggle" aria-label="Menú">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div class="topbar-title" id="topbarTitle">Productos</div>
+      <span class="topbar-title" id="topbarTitle">Productos</span>
     </header>
 
-    <!-- ══════ SECTION: PRODUCTOS ══════ -->
-    <section class="section active" id="section-productos">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Productos</h1>
-          <span class="section-sub">Gestiona tu catálogo de servicios</span>
-        </div>
-        <button class="btn-primary" id="btnNewProduct">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nuevo producto
-        </button>
-      </div>
+    <main class="main">
 
-      <div class="table-card">
-        <div class="table-loading" id="productsLoading"><div class="spinner"></div></div>
-        <div class="table-wrapper">
-        <table class="table" id="productsTable" style="display:none">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Categoría</th>
-              <th>Cuentas</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="productsBody"></tbody>
-        </table>
-        </div><!-- /table-wrapper -->
+      <!-- PRODUCTOS -->
+      <section class="section active" id="section-productos">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Productos</h1>
+            <p class="section-sub">Gestiona tu catálogo</p>
+          </div>
+          <button class="btn-primary" id="btnNewProduct">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo
+          </button>
+        </div>
+        <div class="loading-wrap" id="productsLoading"><div class="spinner"></div></div>
+        <div class="table-wrap" id="productsTableWrap" style="display:none">
+          <table class="table">
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Cuentas</th><th>Acciones</th></tr></thead>
+            <tbody id="productsBody"></tbody>
+          </table>
+        </div>
+        <div class="cards-list" id="productsCards" style="display:none"></div>
         <div class="empty-state" id="productsEmpty" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           <p>No hay productos aún</p>
           <button class="btn-primary" id="btnNewProductEmpty">Crear primer producto</button>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ══════ SECTION: CUENTAS ══════ -->
-    <section class="section" id="section-cuentas">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Cuentas</h1>
-          <span class="section-sub">Inventario de cuentas disponibles</span>
+      <!-- CUENTAS -->
+      <section class="section" id="section-cuentas">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Cuentas</h1>
+            <p class="section-sub">Inventario disponible</p>
+          </div>
+          <button class="btn-primary" id="btnNewAccount">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva
+          </button>
         </div>
-        <button class="btn-primary" id="btnNewAccount">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nueva cuenta
-        </button>
-      </div>
-
-      <div class="filter-row">
-        <select class="filter-select" id="filterProduct">
-          <option value="">Todos los productos</option>
-        </select>
-        <select class="filter-select" id="filterStatus">
-          <option value="">Todos los estados</option>
-          <option value="true">Disponibles</option>
-          <option value="false">Vendidas</option>
-        </select>
-      </div>
-
-      <div class="table-card">
-        <div class="table-loading" id="accountsLoading"><div class="spinner"></div></div>
-        <div class="table-wrapper">
-        <table class="table" id="accountsTable" style="display:none">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Descripción</th>
-              <th>Precio</th>
-              <th>Vence</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="accountsBody"></tbody>
-        </table>
-        </div><!-- /table-wrapper -->
+        <div class="filter-row">
+          <select class="filter-select" id="filterProduct"><option value="">Todos los productos</option></select>
+          <select class="filter-select" id="filterStatus">
+            <option value="">Todos los estados</option>
+            <option value="true">Disponibles</option>
+            <option value="false">Vendidas</option>
+          </select>
+        </div>
+        <div class="loading-wrap" id="accountsLoading"><div class="spinner"></div></div>
+        <div class="table-wrap" id="accountsTableWrap" style="display:none">
+          <table class="table">
+            <thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Vence</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="accountsBody"></tbody>
+          </table>
+        </div>
+        <div class="cards-list" id="accountsCards" style="display:none"></div>
         <div class="empty-state" id="accountsEmpty" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <p>No hay cuentas en este filtro</p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ══════ SECTION: PEDIDOS ══════ -->
-    <section class="section" id="section-pedidos">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Pedidos</h1>
-          <span class="section-sub">Comprobantes de transferencia pendientes</span>
+      <!-- PEDIDOS -->
+      <section class="section" id="section-pedidos">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Pedidos</h1>
+            <p class="section-sub">Comprobantes de transferencia</p>
+          </div>
         </div>
-      </div>
-
-      <div class="tabs-filter">
-        <button class="tab-filter active" data-status="pendiente">Pendientes</button>
-        <button class="tab-filter" data-status="aprobado">Aprobados</button>
-        <button class="tab-filter" data-status="rechazado">Rechazados</button>
-      </div>
-
-      <div class="table-card">
-        <div class="table-loading" id="ordersLoading"><div class="spinner"></div></div>
-        <div class="table-wrapper">
-        <table class="table" id="ordersTable" style="display:none">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Producto</th>
-              <th>Monto</th>
-              <th>Comprobante</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="ordersBody"></tbody>
-        </table>
-        </div><!-- /table-wrapper -->
+        <div class="tabs-filter">
+          <button class="tab-filter active" data-status="pendiente">Pendientes</button>
+          <button class="tab-filter" data-status="aprobado">Aprobados</button>
+          <button class="tab-filter" data-status="rechazado">Rechazados</button>
+        </div>
+        <div class="loading-wrap" id="ordersLoading"><div class="spinner"></div></div>
+        <div class="table-wrap" id="ordersTableWrap" style="display:none">
+          <table class="table">
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Monto</th><th>Comprobante</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+        <div class="cards-list" id="ordersCards" style="display:none"></div>
         <div class="empty-state" id="ordersEmpty" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <p>No hay pedidos en esta categoría</p>
+          <p>No hay pedidos aquí</p>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ══════ SECTION: BANCO ══════ -->
-    <section class="section" id="section-banco">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Datos bancarios</h1>
-          <span class="section-sub">Información que verá el cliente al pagar por transferencia</span>
-        </div>
-      </div>
-
-      <div class="bank-card">
-        <div class="bank-preview" id="bankPreview">
-          <div class="bank-preview-label">Vista previa del cliente</div>
-          <div class="bank-preview-body">
-            <div class="bank-preview-row">
-              <span class="bank-preview-key">Banco</span>
-              <span class="bank-preview-val" id="previewBanco">—</span>
-            </div>
-            <div class="bank-preview-row">
-              <span class="bank-preview-key">CLABE</span>
-              <span class="bank-preview-val mono" id="previewClabe">—</span>
-            </div>
-            <div class="bank-preview-row">
-              <span class="bank-preview-key">Titular</span>
-              <span class="bank-preview-val" id="previewTitular">—</span>
-            </div>
-            <div class="bank-preview-row" id="previewAliasRow" style="display:none">
-              <span class="bank-preview-key">Alias / CoDi</span>
-              <span class="bank-preview-val mono" id="previewAlias">—</span>
-            </div>
+      <!-- BANCO -->
+      <section class="section" id="section-banco">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Datos bancarios</h1>
+            <p class="section-sub">Lo que verá el cliente al pagar</p>
           </div>
         </div>
+        <div class="bank-card">
+          <div class="bank-preview">
+            <div class="bank-preview-label">Vista previa del cliente</div>
+            <div class="bank-preview-row"><span class="bank-k">Banco</span><span class="bank-v" id="previewBanco">—</span></div>
+            <div class="bank-preview-row"><span class="bank-k">CLABE</span><span class="bank-v mono" id="previewClabe">—</span></div>
+            <div class="bank-preview-row"><span class="bank-k">Titular</span><span class="bank-v" id="previewTitular">—</span></div>
+            <div class="bank-preview-row" id="previewAliasRow" style="display:none"><span class="bank-k">Alias</span><span class="bank-v mono" id="previewAlias">—</span></div>
+          </div>
+          <form class="bank-form" id="bankForm">
+            <div class="form-group">
+              <label class="form-label">Banco *</label>
+              <input class="form-input" type="text" id="inputBanco" placeholder="Ej. BBVA, Banamex..." required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CLABE interbancaria *</label>
+              <input class="form-input mono" type="text" id="inputClabe" placeholder="18 dígitos" maxlength="18" inputmode="numeric" required />
+              <span class="form-hint">Exactamente 18 dígitos</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Titular *</label>
+              <input class="form-input" type="text" id="inputTitular" placeholder="Nombre en la cuenta" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Alias / CoDi <span class="form-optional">Opcional</span></label>
+              <input class="form-input mono" type="text" id="inputAlias" placeholder="Alias o número CoDi" />
+            </div>
+            <div class="bank-actions">
+              <button type="submit" class="btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar
+              </button>
+              <span class="save-status" id="saveStatus"></span>
+            </div>
+          </form>
+        </div>
+      </section>
 
-        <form class="bank-form" id="bankForm">
-          <div class="form-group">
-            <label class="form-label">Banco *</label>
-            <input class="form-input" type="text" id="inputBanco" placeholder="Ej. BBVA, Banamex, HSBC..." required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">CLABE interbancaria *</label>
-            <input class="form-input mono" type="text" id="inputClabe" placeholder="18 dígitos" maxlength="18" inputmode="numeric" required />
-            <span class="form-hint">La CLABE tiene exactamente 18 dígitos</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nombre del titular *</label>
-            <input class="form-input" type="text" id="inputTitular" placeholder="Nombre como aparece en la cuenta" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Alias / CoDi <span class="form-optional">Opcional</span></label>
-            <input class="form-input mono" type="text" id="inputAlias" placeholder="Alias de la cuenta o número CoDi" />
-          </div>
+    </main>
+  </div>
 
-          <div class="bank-form-actions">
-            <button type="submit" class="btn-primary" id="btnSaveBank">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Guardar datos
-            </button>
-            <span class="save-status" id="saveStatus"></span>
-          </div>
-        </form>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ══════════════════════════════
-       MODAL: PRODUCTO
-  ══════════════════════════════ -->
+  <!-- MODAL PRODUCTO -->
   <div class="modal-overlay" id="productModalOverlay">
-    <div class="modal" id="productModal">
+    <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title" id="productModalTitle">Nuevo producto</h2>
-        <button class="modal-close" id="productModalClose">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button class="modal-close" id="productModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <form id="productForm">
+      <form id="productForm" class="modal-body">
         <input type="hidden" id="productId" />
         <div class="form-group">
-          <label class="form-label">Nombre del producto *</label>
+          <label class="form-label">Nombre *</label>
           <input class="form-input" type="text" id="productName" placeholder="Ej. Netflix Premium" required />
         </div>
         <div class="form-group">
@@ -288,24 +225,18 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════
-       MODAL: CUENTA
-  ══════════════════════════════ -->
+  <!-- MODAL CUENTA -->
   <div class="modal-overlay" id="accountModalOverlay">
-    <div class="modal" id="accountModal">
+    <div class="modal">
       <div class="modal-header">
         <h2 class="modal-title" id="accountModalTitle">Nueva cuenta</h2>
-        <button class="modal-close" id="accountModalClose">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button class="modal-close" id="accountModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <form id="accountForm">
+      <form id="accountForm" class="modal-body">
         <input type="hidden" id="accountId" />
         <div class="form-group">
           <label class="form-label">Producto *</label>
-          <select class="form-input" id="accountProduct" required>
-            <option value="">Seleccionar...</option>
-          </select>
+          <select class="form-input" id="accountProduct" required><option value="">Seleccionar...</option></select>
         </div>
         <div class="form-group">
           <label class="form-label">Descripción</label>
@@ -313,22 +244,22 @@
         </div>
         <div class="form-group">
           <label class="form-label">Credenciales *</label>
-          <textarea class="form-input form-textarea" id="accountCredentials" placeholder="Email: ejemplo@mail.com&#10;Contraseña: abc123&#10;PIN: 1234" required></textarea>
-          <span class="form-hint">Estos datos se envían al comprador tras confirmar el pago</span>
+          <textarea class="form-input form-textarea" id="accountCredentials" placeholder="Email: ejemplo@mail.com&#10;Contraseña: abc123" required></textarea>
+          <span class="form-hint">Se entregan al comprador al aprobar el pedido</span>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Precio (MXN) *</label>
+            <label class="form-label">Precio MXN *</label>
             <input class="form-input" type="number" id="accountPrice" placeholder="0.00" step="0.01" min="0" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha de expiración</label>
+            <label class="form-label">Expira</label>
             <input class="form-input" type="date" id="accountExpires" />
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Tiempo de entrega (horas)</label>
-          <input class="form-input" type="number" id="accountDelivery" placeholder="12" value="12" min="1" />
+          <label class="form-label">Entrega (horas)</label>
+          <input class="form-input" type="number" id="accountDelivery" value="12" min="1" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="accountModalCancel">Cancelar</button>
@@ -338,28 +269,21 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════
-       MODAL: VER COMPROBANTE
-  ══════════════════════════════ -->
+  <!-- MODAL COMPROBANTE -->
   <div class="modal-overlay" id="voucherModalOverlay">
-    <div class="modal modal--sm" id="voucherModal">
+    <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">Comprobante de pago</h2>
-        <button class="modal-close" id="voucherModalClose">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <h2 class="modal-title">Comprobante</h2>
+        <button class="modal-close" id="voucherModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <div class="voucher-body">
+      <div class="modal-body">
         <img class="voucher-img" id="voucherImg" src="" alt="Comprobante" />
-        <div class="voucher-info" id="voucherInfo"></div>
       </div>
       <div class="modal-actions" id="voucherActions"></div>
     </div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin.js"></script>
 </body>
