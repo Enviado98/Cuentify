@@ -34,6 +34,7 @@ navItems.forEach(item => {
     topbarTitle.textContent = sectionTitles[sec] || sec;
     sidebar.classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('visible');
+    document.body.style.overflow = '';
     if (sec === 'productos') loadProducts();
     if (sec === 'cuentas')   loadAccounts();
     if (sec === 'pedidos')   loadOrders('pendiente');
@@ -44,11 +45,13 @@ navItems.forEach(item => {
 document.getElementById('sidebarToggle').addEventListener('click', () => {
   const isOpen = sidebar.classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('visible', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 });
 
 document.getElementById('sidebarOverlay').addEventListener('click', () => {
   sidebar.classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('visible');
+  document.body.style.overflow = '';
 });
 
 // ── TOAST ──
@@ -104,14 +107,14 @@ async function loadProducts() {
       : `<div class="product-row-placeholder">📦</div>`;
     const count = countMap[p.id] || 0;
     tr.innerHTML = `
-      <td>
+      <td data-label="Producto">
         <div class="product-row-name">
           ${thumb}
           <strong>${p.name}</strong>
         </div>
       </td>
-      <td>${p.category || '—'}</td>
-      <td>${count} disponible${count !== 1 ? 's' : ''}</td>
+      <td data-label="Categoría">${p.category || '—'}</td>
+      <td data-label="Cuentas">${count} disponible${count !== 1 ? 's' : ''}</td>
       <td>
         <div style="display:flex;gap:4px;">
           <button class="btn-icon" data-action="edit-product" data-id="${p.id}" title="Editar">
@@ -232,11 +235,11 @@ async function loadAccounts() {
     const tr = document.createElement('tr');
     const avail = a.is_available;
     tr.innerHTML = `
-      <td>${a.products?.name || '—'}</td>
-      <td>${a.description || '—'}</td>
-      <td>$${parseFloat(a.price || 0).toFixed(2)}</td>
-      <td>${fmtDate(a.expires_at)}</td>
-      <td>
+      <td data-label="Producto">${a.products?.name || '—'}</td>
+      <td data-label="Descripción">${a.description || '—'}</td>
+      <td data-label="Precio">$${parseFloat(a.price || 0).toFixed(2)}</td>
+      <td data-label="Vence">${fmtDate(a.expires_at)}</td>
+      <td data-label="Estado">
         <span class="badge badge--${avail ? 'green' : 'red'}">
           <span class="badge-dot"></span>
           ${avail ? 'Disponible' : 'Vendida'}
@@ -422,11 +425,11 @@ async function loadOrders(status) {
     }
 
     tr.innerHTML = `
-      <td>${fmtDate(o.created_at)}</td>
-      <td>${o.customer_email || '—'}</td>
-      <td>${productName}<br><small style="color:var(--text-muted)">${accountDesc}</small></td>
-      <td>$${parseFloat(o.amount || 0).toFixed(2)}</td>
-      <td>
+      <td data-label="Fecha">${fmtDate(o.created_at)}</td>
+      <td data-label="Cliente">${o.customer_email || '—'}</td>
+      <td data-label="Producto">${productName}<br><small style="color:var(--text-muted)">${accountDesc}</small></td>
+      <td data-label="Monto">$${parseFloat(o.amount || 0).toFixed(2)}</td>
+      <td data-label="Comprobante">
         ${o.voucher_url
           ? `<button class="btn-icon" data-action="view-voucher" data-id="${o.id}" data-url="${o.voucher_url}" title="Ver comprobante">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -434,7 +437,7 @@ async function loadOrders(status) {
           : '<span style="color:var(--text-muted);font-size:0.8rem">Sin archivo</span>'
         }
       </td>
-      <td>${statusBadge}</td>
+      <td data-label="Estado">${statusBadge}</td>
       <td><div style="display:flex;gap:4px;">${actions}</div></td>
     `;
     tbody.appendChild(tr);

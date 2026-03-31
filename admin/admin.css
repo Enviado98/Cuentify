@@ -742,6 +742,7 @@ body {
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   .sidebar.open {
     transform: translateX(0);
@@ -753,7 +754,7 @@ body {
     display: flex;
   }
   .section {
-    padding: 20px 16px 40px;
+    padding: 16px 12px 40px;
   }
   .form-row {
     grid-template-columns: 1fr;
@@ -762,4 +763,100 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  /* ── TABLA → CARDS en móvil ── */
+  .table-wrapper { overflow: visible; }
+
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+  }
+
+  /* Ocultar cabeceras — los labels van en cada celda */
+  .table thead tr {
+    display: none;
+  }
+
+  .table tbody tr {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0;
+  }
+
+  .table tbody td {
+    padding: 4px 0;
+    border: none;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  /* Etiqueta antes de cada celda con data-label */
+  .table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+
+  /* Celda de acciones — alineada a la derecha en la misma fila que el primer dato */
+  .table tbody td:last-child {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-left: 10px;
+  }
+  .table tbody td:last-child::before { display: none; }
+
+  /* Nombre/producto ocupa toda la primera columna */
+  .table tbody td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  /* Resto de celdas debajo */
+  .table tbody td:not(:first-child):not(:last-child) {
+    grid-column: 1;
+  }
+
+  /* Sin borde en tabla card */
+  .table-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Filtros en columna */
+  .filter-row {
+    flex-direction: column;
+  }
+  .filter-select {
+    width: 100%;
+  }
 }
+
+/* En desktop nunca mostrar el overlay */
+@media (min-width: 769px) {
+  .sidebar-overlay { display: none !important; }
+  .sidebar { transform: none !important; }
+}
+
