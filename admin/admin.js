@@ -1,503 +1,571 @@
 /* ==============================
-   CUENTIFY – admin.js
-   UI puro. Sin lógica de backend.
-   Conectar Supabase en cada TODO.
+   CUENTIFY – admin.js (nuevo)
+   4 secciones: Productos, Cuentas, Pedidos, Banco
    ============================== */
 
 document.addEventListener('DOMContentLoaded', () => {
 
+// ── SUPABASE ──
+const SUPABASE_URL  = 'https://cfmmmrytieudxjfcfrag.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbW1tcnl0aWV1ZHhqZmNmcmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzUwMzcsImV4cCI6MjA5MDQ1MTAzN30.xMUI43qDEwgpkYotKSPY6KfAJM4Sf1ZjX4WHcgg4cS4';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ════════════════════════════════════
-   NAVEGACIÓN DE SECCIONES
-════════════════════════════════════ */
-
+// ── NAVIGATION ──
 const navItems    = document.querySelectorAll('.nav-item');
 const sections    = document.querySelectorAll('.section');
 const topbarTitle = document.getElementById('topbarTitle');
+const sidebar     = document.getElementById('sidebar');
 
 const sectionTitles = {
-  dashboard:      'Dashboard',
-  productos:      'Productos',
-  cuentas:        'Cuentas',
-  pedidos:        'Pedidos',
-  clientes:       'Clientes',
-  configuracion:  'Configuración',
+  productos: 'Productos',
+  cuentas:   'Cuentas',
+  pedidos:   'Pedidos',
+  banco:     'Datos bancarios',
 };
 
-function goToSection(name) {
-  // Nav items
-  navItems.forEach(item => {
-    item.classList.toggle('active', item.dataset.section === name);
-  });
-
-  // Sections
-  sections.forEach(s => {
-    s.classList.toggle('active', s.id === `section-${name}`);
-  });
-
-  // Topbar title
-  topbarTitle.textContent = sectionTitles[name] || name;
-
-  // Close sidebar on mobile
-  closeSidebar();
-}
-
 navItems.forEach(item => {
-  item.addEventListener('click', (e) => {
+  item.addEventListener('click', e => {
     e.preventDefault();
-    goToSection(item.dataset.section);
+    const sec = item.dataset.section;
+    navItems.forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    sections.forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + sec).classList.add('active');
+    topbarTitle.textContent = sectionTitles[sec] || sec;
+    sidebar.classList.remove('open');
+    if (sec === 'productos') loadProducts();
+    if (sec === 'cuentas')   loadAccounts();
+    if (sec === 'pedidos')   loadOrders('pendiente');
+    if (sec === 'banco')     loadBankInfo();
   });
 });
 
-// "Ver todos" desde dashboard
-document.querySelectorAll('[data-goto]').forEach(btn => {
-  btn.addEventListener('click', () => goToSection(btn.dataset.goto));
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  sidebar.classList.toggle('open');
 });
 
-
-/* ════════════════════════════════════
-   SIDEBAR MOBILE
-════════════════════════════════════ */
-
-const sidebar        = document.getElementById('sidebar');
-const sidebarOverlay = document.getElementById('sidebarOverlay');
-const sidebarToggle  = document.getElementById('sidebarToggle');
-
-function openSidebar() {
-  sidebar.classList.add('open');
-  sidebarOverlay.classList.add('visible');
-}
-function closeSidebar() {
-  sidebar.classList.remove('open');
-  sidebarOverlay.classList.remove('visible');
+// ── TOAST ──
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-sidebarToggle.addEventListener('click', openSidebar);
-sidebarOverlay.addEventListener('click', closeSidebar);
-
-
-/* ════════════════════════════════════
-   FILTROS DE TABS (productos / cuentas)
-════════════════════════════════════ */
-
-document.querySelectorAll('.filter-tabs').forEach(group => {
-  group.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      group.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      // TODO: filtrar tabla según tab.dataset.filter
-    });
-  });
-});
-
-
-/* ════════════════════════════════════
-   MODAL: PRODUCTO
-════════════════════════════════════ */
-
-const modalProductoOverlay  = document.getElementById('modalProductoOverlay');
-const modalProducto         = document.getElementById('modalProducto');
-const modalProductoTitle    = document.getElementById('modalProductoTitle');
-const modalProductoClose    = document.getElementById('modalProductoClose');
-const modalProductoCancelBtn = document.getElementById('modalProductoCancelBtn');
-const modalProductoSaveBtn  = document.getElementById('modalProductoSaveBtn');
-const btnNuevoProducto      = document.getElementById('btnNuevoProducto');
-
-const imgUploadAreaProducto = document.getElementById('imgUploadAreaProducto');
-const imgInputProducto      = document.getElementById('imgInputProducto');
-const imgPreviewProducto    = document.getElementById('imgPreviewProducto');
-
-function openModalProducto(editData = null) {
-  modalProductoTitle.textContent = editData ? 'Editar producto' : 'Nuevo producto';
-  modalProductoSaveBtn.textContent = editData ? 'Guardar cambios' : 'Guardar producto';
-
-  if (editData) {
-    document.getElementById('inputProductoNombre').value = editData.nombre || '';
-    document.getElementById('inputProductoCat').value    = editData.categoria || 'streaming';
-  } else {
-    document.getElementById('inputProductoNombre').value = '';
-    document.getElementById('inputProductoCat').value    = 'streaming';
-    imgPreviewProducto.classList.remove('visible');
-    imgPreviewProducto.src = '';
-  }
-
-  modalProductoOverlay.classList.add('visible');
-  modalProducto.classList.add('visible');
+// ── FORMAT DATE ──
+function fmtDate(str) {
+  if (!str) return '—';
+  return new Date(str).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function closeModalProducto() {
-  modalProductoOverlay.classList.remove('visible');
-  modalProducto.classList.remove('visible');
-}
+/* ══════════════════════════════════
+   PRODUCTOS
+══════════════════════════════════ */
 
-btnNuevoProducto.addEventListener('click', () => openModalProducto());
-modalProductoClose.addEventListener('click', closeModalProducto);
-modalProductoCancelBtn.addEventListener('click', closeModalProducto);
-modalProductoOverlay.addEventListener('click', closeModalProducto);
+let allProducts = [];
 
-imgUploadAreaProducto.addEventListener('click', () => imgInputProducto.click());
-imgInputProducto.addEventListener('change', () => {
-  const file = imgInputProducto.files[0];
-  if (!file) return;
-  imgPreviewProducto.src = URL.createObjectURL(file);
-  imgPreviewProducto.classList.add('visible');
-});
+async function loadProducts() {
+  document.getElementById('productsLoading').style.display = 'flex';
+  document.getElementById('productsTable').style.display = 'none';
+  document.getElementById('productsEmpty').style.display = 'none';
 
-modalProductoSaveBtn.addEventListener('click', () => {
-  const nombre    = document.getElementById('inputProductoNombre').value.trim();
-  const categoria = document.getElementById('inputProductoCat').value;
+  const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
 
-  if (!nombre) {
-    showToast('El nombre es obligatorio', 'error');
+  document.getElementById('productsLoading').style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('productsEmpty').style.display = 'flex';
     return;
   }
 
-  // TODO: guardar en Supabase
-  // const { error } = await supabase.from('products').insert([{ name: nombre, category: categoria }]);
+  allProducts = data;
+  refreshProductSelect();
 
-  showToast('Producto guardado ✓', 'success');
-  closeModalProducto();
-  renderProductosTable([]);  // TODO: recargar tabla real
-});
+  const tbody = document.getElementById('productsBody');
+  tbody.innerHTML = '';
 
+  // Contar cuentas disponibles por producto
+  const ids = data.map(p => p.id);
+  const { data: counts } = await sb.from('accounts').select('product_id').in('product_id', ids).eq('is_available', true);
+  const countMap = {};
+  (counts || []).forEach(r => { countMap[r.product_id] = (countMap[r.product_id] || 0) + 1; });
 
-/* ════════════════════════════════════
-   MODAL: CUENTA
-════════════════════════════════════ */
-
-const modalCuentaOverlay   = document.getElementById('modalCuentaOverlay');
-const modalCuenta          = document.getElementById('modalCuenta');
-const modalCuentaTitle     = document.getElementById('modalCuentaTitle');
-const modalCuentaClose     = document.getElementById('modalCuentaClose');
-const modalCuentaCancelBtn = document.getElementById('modalCuentaCancelBtn');
-const modalCuentaSaveBtn   = document.getElementById('modalCuentaSaveBtn');
-const btnNuevaCuenta       = document.getElementById('btnNuevaCuenta');
-
-function openModalCuenta(editData = null) {
-  modalCuentaTitle.textContent    = editData ? 'Editar cuenta' : 'Publicar cuenta';
-  modalCuentaSaveBtn.textContent  = editData ? 'Guardar cambios' : 'Publicar cuenta';
-
-  if (editData) {
-    document.getElementById('inputCuentaDesc').value    = editData.descripcion || '';
-    document.getElementById('inputCuentaPrecio').value  = editData.precio || '';
-    document.getElementById('inputCuentaDias').value    = editData.dias || '';
-  } else {
-    document.getElementById('inputCuentaProducto').value = '';
-    document.getElementById('inputCuentaDesc').value    = '';
-    document.getElementById('inputCuentaPrecio').value  = '';
-    document.getElementById('inputCuentaDias').value    = '';
-    document.getElementById('inputCuentaEmail').value   = '';
-    document.getElementById('inputCuentaPass').value    = '';
-    document.getElementById('inputCuentaEntrega').value = '12';
-  }
-
-  modalCuentaOverlay.classList.add('visible');
-  modalCuenta.classList.add('visible');
-}
-
-function closeModalCuenta() {
-  modalCuentaOverlay.classList.remove('visible');
-  modalCuenta.classList.remove('visible');
-}
-
-btnNuevaCuenta.addEventListener('click', () => openModalCuenta());
-modalCuentaClose.addEventListener('click', closeModalCuenta);
-modalCuentaCancelBtn.addEventListener('click', closeModalCuenta);
-modalCuentaOverlay.addEventListener('click', closeModalCuenta);
-
-modalCuentaSaveBtn.addEventListener('click', () => {
-  const desc   = document.getElementById('inputCuentaDesc').value.trim();
-  const precio = document.getElementById('inputCuentaPrecio').value;
-  const dias   = document.getElementById('inputCuentaDias').value;
-
-  if (!desc)   { showToast('La descripción es obligatoria', 'error'); return; }
-  if (!precio) { showToast('El precio es obligatorio', 'error'); return; }
-  if (!dias)   { showToast('La duración es obligatoria', 'error'); return; }
-
-  // TODO: guardar en Supabase
-  // const expiresAt = new Date(); expiresAt.setDate(expiresAt.getDate() + parseInt(dias));
-  // const { error } = await supabase.from('accounts').insert([{ ... }]);
-
-  showToast('Cuenta publicada ✓', 'success');
-  closeModalCuenta();
-  renderCuentasTable([]); // TODO: recargar tabla real
-});
-
-
-/* ════════════════════════════════════
-   MODAL: PEDIDO DETALLE
-════════════════════════════════════ */
-
-const modalPedidoOverlay = document.getElementById('modalPedidoOverlay');
-const modalPedido        = document.getElementById('modalPedido');
-const modalPedidoClose   = document.getElementById('modalPedidoClose');
-const modalPedidoClose2  = document.getElementById('modalPedidoClose2');
-
-function openModalPedido(pedidoData = null) {
-  // TODO: rellenar con datos reales del pedido
-  modalPedidoOverlay.classList.add('visible');
-  modalPedido.classList.add('visible');
-}
-
-function closeModalPedido() {
-  modalPedidoOverlay.classList.remove('visible');
-  modalPedido.classList.remove('visible');
-}
-
-modalPedidoClose.addEventListener('click', closeModalPedido);
-modalPedidoClose2.addEventListener('click', closeModalPedido);
-modalPedidoOverlay.addEventListener('click', closeModalPedido);
-
-
-/* ════════════════════════════════════
-   TABLA: PRODUCTOS
-   Renderiza filas a partir de un array.
-   Reemplazar [] con datos de Supabase.
-════════════════════════════════════ */
-
-function renderProductosTable(data) {
-  const body  = document.getElementById('productosTableBody');
-  const empty = document.getElementById('productosEmpty');
-
-  body.innerHTML = '';
-
-  if (!data || data.length === 0) {
-    empty.style.display = 'flex';
-    return;
-  }
-  empty.style.display = 'none';
-
-  data.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'table-row';
-    row.innerHTML = `
-      <div class="col-thumb">
-        <div class="cell-thumb">
-          ${item.image_url ? `<img src="${item.image_url}" alt="" />` : '📦'}
+  data.forEach(p => {
+    const tr = document.createElement('tr');
+    const thumb = p.image_url
+      ? `<img class="product-row-thumb" src="${p.image_url}" alt="" />`
+      : `<div class="product-row-placeholder">📦</div>`;
+    const count = countMap[p.id] || 0;
+    tr.innerHTML = `
+      <td>
+        <div class="product-row-name">
+          ${thumb}
+          <strong>${p.name}</strong>
         </div>
-      </div>
-      <div class="col-name">
-        <div class="cell-name">${item.name}</div>
-      </div>
-      <div class="col-cat">
-        <span class="cat-badge">${item.category}</span>
-      </div>
-      <div class="col-stock">
-        <span class="stock-badge ${item.stock > 2 ? 'stock-ok' : item.stock > 0 ? 'stock-low' : 'stock-none'}">
-          <span class="stock-dot"></span>
-          ${item.stock ?? '—'}
-        </span>
-      </div>
-      <div class="col-date">
-        <span class="cell-muted">${item.created_at ? new Date(item.created_at).toLocaleDateString('es-MX') : '—'}</span>
-      </div>
-      <div class="col-actions">
-        <button class="action-btn action-btn--edit" title="Editar" data-id="${item.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="action-btn action-btn--delete" title="Borrar" data-id="${item.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
-      </div>
+      </td>
+      <td>${p.category || '—'}</td>
+      <td>${count} disponible${count !== 1 ? 's' : ''}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn-icon" data-action="edit-product" data-id="${p.id}" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon danger" data-action="delete-product" data-id="${p.id}" title="Eliminar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </td>
     `;
-
-    row.querySelector('.action-btn--edit').addEventListener('click', () => {
-      openModalProducto(item);
-    });
-
-    row.querySelector('.action-btn--delete').addEventListener('click', () => {
-      if (!confirm(`¿Borrar "${item.name}"?`)) return;
-      // TODO: await supabase.from('products').delete().eq('id', item.id);
-      showToast('Producto eliminado', 'success');
-      renderProductosTable(data.filter(p => p.id !== item.id));
-    });
-
-    body.appendChild(row);
+    tbody.appendChild(tr);
   });
+
+  document.getElementById('productsTable').style.display = 'table';
 }
 
+// Acciones tabla productos
+document.getElementById('productsBody').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
 
-/* ════════════════════════════════════
-   TABLA: CUENTAS
-════════════════════════════════════ */
+  if (action === 'edit-product') {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('productId').value = p.id;
+    document.getElementById('productName').value = p.name;
+    document.getElementById('productCategory').value = p.category || '';
+    document.getElementById('productImage').value = p.image_url || '';
+    document.getElementById('productModalTitle').textContent = 'Editar producto';
+    openModal('productModalOverlay');
+  }
 
-function renderCuentasTable(data) {
-  const body  = document.getElementById('cuentasTableBody');
-  const empty = document.getElementById('cuentasEmpty');
+  if (action === 'delete-product') {
+    if (!confirm('¿Eliminar este producto? También se eliminarán sus cuentas.')) return;
+    const { error } = await sb.from('products').delete().eq('id', id);
+    if (error) { toast('Error al eliminar', 'error'); return; }
+    toast('Producto eliminado', 'success');
+    loadProducts();
+  }
+});
 
-  body.innerHTML = '';
+// Modal producto
+document.getElementById('btnNewProduct').addEventListener('click', () => {
+  clearProductForm();
+  document.getElementById('productModalTitle').textContent = 'Nuevo producto';
+  openModal('productModalOverlay');
+});
+document.getElementById('btnNewProductEmpty')?.addEventListener('click', () => {
+  clearProductForm();
+  document.getElementById('productModalTitle').textContent = 'Nuevo producto';
+  openModal('productModalOverlay');
+});
+document.getElementById('productModalClose').addEventListener('click', () => closeModal('productModalOverlay'));
+document.getElementById('productModalCancel').addEventListener('click', () => closeModal('productModalOverlay'));
 
-  if (!data || data.length === 0) {
-    empty.style.display = 'flex';
+function clearProductForm() {
+  document.getElementById('productId').value = '';
+  document.getElementById('productName').value = '';
+  document.getElementById('productCategory').value = '';
+  document.getElementById('productImage').value = '';
+}
+
+document.getElementById('productForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id   = document.getElementById('productId').value;
+  const name = document.getElementById('productName').value.trim();
+  const cat  = document.getElementById('productCategory').value;
+  const img  = document.getElementById('productImage').value.trim();
+
+  const payload = { name, category: cat, image_url: img || null };
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('products').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('products').insert(payload));
+  }
+
+  if (error) { toast('Error al guardar', 'error'); return; }
+  toast(id ? 'Producto actualizado' : 'Producto creado', 'success');
+  closeModal('productModalOverlay');
+  loadProducts();
+});
+
+
+/* ══════════════════════════════════
+   CUENTAS
+══════════════════════════════════ */
+
+async function loadAccounts() {
+  document.getElementById('accountsLoading').style.display = 'flex';
+  document.getElementById('accountsTable').style.display = 'none';
+  document.getElementById('accountsEmpty').style.display = 'none';
+
+  const productId = document.getElementById('filterProduct').value;
+  const status    = document.getElementById('filterStatus').value;
+
+  let query = sb.from('accounts').select('*, products(name)').order('created_at', { ascending: false });
+  if (productId) query = query.eq('product_id', productId);
+  if (status !== '')  query = query.eq('is_available', status === 'true');
+
+  const { data, error } = await query;
+
+  document.getElementById('accountsLoading').style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('accountsEmpty').style.display = 'flex';
     return;
   }
-  empty.style.display = 'none';
 
-  data.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'table-row';
+  const tbody = document.getElementById('accountsBody');
+  tbody.innerHTML = '';
 
-    const vence = item.expires_at
-      ? new Date(item.expires_at).toLocaleDateString('es-MX')
-      : '—';
-
-    const estadoMap = {
-      disponible: { label: 'Disponible', cls: 'status-badge--ok' },
-      vendida:    { label: 'Vendida',    cls: 'status-badge--sold' },
-      expirada:   { label: 'Expirada',   cls: 'status-badge--expired' },
-    };
-    const estado = estadoMap[item.status] || { label: item.status || '—', cls: '' };
-
-    row.innerHTML = `
-      <div class="col-name">
-        <div class="cell-name">${item.description || '—'}</div>
-      </div>
-      <div class="col-cat">
-        <span class="cat-badge">${item.product_name || '—'}</span>
-      </div>
-      <div class="col-price">
-        <span class="cell-price">$${item.price ? parseFloat(item.price).toFixed(2) : '—'}</span>
-      </div>
-      <div class="col-date">
-        <span class="cell-muted">${vence}</span>
-      </div>
-      <div class="col-status">
-        <span class="status-badge ${estado.cls}">${estado.label}</span>
-      </div>
-      <div class="col-actions">
-        <button class="action-btn action-btn--edit" title="Editar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="action-btn action-btn--delete" title="Borrar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
-      </div>
+  data.forEach(a => {
+    const tr = document.createElement('tr');
+    const avail = a.is_available;
+    tr.innerHTML = `
+      <td>${a.products?.name || '—'}</td>
+      <td>${a.description || '—'}</td>
+      <td>$${parseFloat(a.price || 0).toFixed(2)}</td>
+      <td>${fmtDate(a.expires_at)}</td>
+      <td>
+        <span class="badge badge--${avail ? 'green' : 'red'}">
+          <span class="badge-dot"></span>
+          ${avail ? 'Disponible' : 'Vendida'}
+        </span>
+      </td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn-icon" data-action="edit-account" data-id="${a.id}" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon danger" data-action="delete-account" data-id="${a.id}" title="Eliminar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </td>
     `;
-
-    row.querySelector('.action-btn--edit').addEventListener('click', () => {
-      openModalCuenta(item);
-    });
-
-    row.querySelector('.action-btn--delete').addEventListener('click', () => {
-      if (!confirm('¿Borrar esta cuenta?')) return;
-      // TODO: await supabase.from('accounts').delete().eq('id', item.id);
-      showToast('Cuenta eliminada', 'success');
-      renderCuentasTable(data.filter(c => c.id !== item.id));
-    });
-
-    body.appendChild(row);
+    tbody.appendChild(tr);
   });
+
+  document.getElementById('accountsTable').style.display = 'table';
 }
 
+// Filtros cuentas
+document.getElementById('filterProduct').addEventListener('change', loadAccounts);
+document.getElementById('filterStatus').addEventListener('change', loadAccounts);
 
-/* ════════════════════════════════════
-   TABLA: PEDIDOS
-════════════════════════════════════ */
+// Acciones tabla cuentas
+document.getElementById('accountsBody').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
 
-function renderPedidosTable(data) {
-  const body = document.getElementById('pedidosTableBody');
-  body.innerHTML = '';
+  if (action === 'edit-account') {
+    const { data: a } = await sb.from('accounts').select('*').eq('id', id).single();
+    if (!a) return;
+    document.getElementById('accountId').value = a.id;
+    document.getElementById('accountProduct').value = a.product_id || '';
+    document.getElementById('accountDescription').value = a.description || '';
+    document.getElementById('accountCredentials').value = a.credentials || '';
+    document.getElementById('accountPrice').value = a.price || '';
+    document.getElementById('accountExpires').value = a.expires_at ? a.expires_at.split('T')[0] : '';
+    document.getElementById('accountDelivery').value = a.delivery_hours || 12;
+    document.getElementById('accountModalTitle').textContent = 'Editar cuenta';
+    openModal('accountModalOverlay');
+  }
 
-  if (!data || data.length === 0) return;
-
-  data.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'table-row';
-
-    const estadoMap = {
-      completado: { label: 'Completado', cls: 'status-badge--ok' },
-      pendiente:  { label: 'Pendiente',  cls: 'status-badge--pending' },
-      cancelado:  { label: 'Cancelado',  cls: 'status-badge--canceled' },
-    };
-    const estado = estadoMap[item.status] || { label: item.status || '—', cls: '' };
-
-    row.innerHTML = `
-      <div class="col-id">#${item.id || '—'}</div>
-      <div class="col-name">
-        <div class="cell-name">${item.cliente || '—'}</div>
-      </div>
-      <div class="col-cat">
-        <span class="cat-badge">${item.producto || '—'}</span>
-      </div>
-      <div class="col-price">
-        <span class="cell-price">$${item.total ? parseFloat(item.total).toFixed(2) : '—'}</span>
-      </div>
-      <div class="col-date">
-        <span class="cell-muted">${item.fecha ? new Date(item.fecha).toLocaleDateString('es-MX') : '—'}</span>
-      </div>
-      <div class="col-status">
-        <span class="status-badge ${estado.cls}">${estado.label}</span>
-      </div>
-      <div class="col-actions">
-        <button class="action-btn action-btn--view" title="Ver detalle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-      </div>
-    `;
-
-    row.querySelector('.action-btn--view').addEventListener('click', () => {
-      openModalPedido(item);
-    });
-
-    body.appendChild(row);
-  });
-}
-
-
-/* ════════════════════════════════════
-   TOGGLES DE CONFIGURACIÓN
-════════════════════════════════════ */
-
-document.querySelectorAll('.toggle').forEach(toggle => {
-  toggle.addEventListener('click', () => {
-    const isOn = toggle.dataset.toggled === 'true';
-    toggle.dataset.toggled = (!isOn).toString();
-    toggle.classList.toggle('active', !isOn);
-    // TODO: guardar preferencia en Supabase/config
-  });
+  if (action === 'delete-account') {
+    if (!confirm('¿Eliminar esta cuenta?')) return;
+    const { error } = await sb.from('accounts').delete().eq('id', id);
+    if (error) { toast('Error al eliminar', 'error'); return; }
+    toast('Cuenta eliminada', 'success');
+    loadAccounts();
+  }
 });
 
-document.querySelectorAll('.btn-save-config').forEach(btn => {
+// Modal cuenta
+document.getElementById('btnNewAccount').addEventListener('click', () => {
+  clearAccountForm();
+  document.getElementById('accountModalTitle').textContent = 'Nueva cuenta';
+  openModal('accountModalOverlay');
+});
+document.getElementById('accountModalClose').addEventListener('click', () => closeModal('accountModalOverlay'));
+document.getElementById('accountModalCancel').addEventListener('click', () => closeModal('accountModalOverlay'));
+
+function clearAccountForm() {
+  ['accountId','accountProduct','accountDescription','accountCredentials',
+   'accountPrice','accountExpires'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('accountDelivery').value = 12;
+}
+
+function refreshProductSelect() {
+  const selects = ['accountProduct', 'filterProduct'];
+  selects.forEach(selId => {
+    const sel = document.getElementById(selId);
+    const current = sel.value;
+    // Keep first option
+    while (sel.options.length > 1) sel.remove(1);
+    allProducts.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  });
+}
+
+document.getElementById('accountForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id          = document.getElementById('accountId').value;
+  const product_id  = document.getElementById('accountProduct').value;
+  const description = document.getElementById('accountDescription').value.trim();
+  const credentials = document.getElementById('accountCredentials').value.trim();
+  const price       = parseFloat(document.getElementById('accountPrice').value);
+  const expires_raw = document.getElementById('accountExpires').value;
+  const delivery    = parseInt(document.getElementById('accountDelivery').value) || 12;
+
+  const payload = {
+    product_id,
+    description: description || null,
+    credentials,
+    price,
+    expires_at: expires_raw ? new Date(expires_raw).toISOString() : null,
+    delivery_hours: delivery,
+    is_available: true,
+  };
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('accounts').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('accounts').insert(payload));
+  }
+
+  if (error) { toast('Error al guardar', 'error'); return; }
+  toast(id ? 'Cuenta actualizada' : 'Cuenta creada', 'success');
+  closeModal('accountModalOverlay');
+  loadAccounts();
+});
+
+
+/* ══════════════════════════════════
+   PEDIDOS
+══════════════════════════════════ */
+
+let currentOrderStatus = 'pendiente';
+
+document.querySelectorAll('.tab-filter').forEach(btn => {
   btn.addEventListener('click', () => {
-    // TODO: guardar configuración real
-    showToast('Configuración guardada ✓', 'success');
+    document.querySelectorAll('.tab-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentOrderStatus = btn.dataset.status;
+    loadOrders(currentOrderStatus);
+  });
+});
+
+async function loadOrders(status) {
+  document.getElementById('ordersLoading').style.display = 'flex';
+  document.getElementById('ordersTable').style.display = 'none';
+  document.getElementById('ordersEmpty').style.display = 'none';
+
+  const { data, error } = await sb
+    .from('orders')
+    .select('*, accounts(description, products(name))')
+    .eq('status', status)
+    .order('created_at', { ascending: false });
+
+  document.getElementById('ordersLoading').style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('ordersEmpty').style.display = 'flex';
+    updatePendingBadge();
+    return;
+  }
+
+  const tbody = document.getElementById('ordersBody');
+  tbody.innerHTML = '';
+
+  data.forEach(o => {
+    const tr = document.createElement('tr');
+    const statusBadge = {
+      pendiente: '<span class="badge badge--orange"><span class="badge-dot"></span>Pendiente</span>',
+      aprobado:  '<span class="badge badge--green"><span class="badge-dot"></span>Aprobado</span>',
+      rechazado: '<span class="badge badge--red"><span class="badge-dot"></span>Rechazado</span>',
+    }[o.status] || o.status;
+
+    const productName = o.accounts?.products?.name || '—';
+    const accountDesc = o.accounts?.description || '—';
+
+    let actions = '';
+    if (o.status === 'pendiente') {
+      actions = `
+        <button class="btn-icon" style="color:var(--green)" data-action="approve-order" data-id="${o.id}" data-account="${o.account_id}" title="Aprobar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+        <button class="btn-icon danger" data-action="reject-order" data-id="${o.id}" title="Rechazar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+    }
+
+    tr.innerHTML = `
+      <td>${fmtDate(o.created_at)}</td>
+      <td>${o.customer_email || '—'}</td>
+      <td>${productName}<br><small style="color:var(--text-muted)">${accountDesc}</small></td>
+      <td>$${parseFloat(o.amount || 0).toFixed(2)}</td>
+      <td>
+        ${o.voucher_url
+          ? `<button class="btn-icon" data-action="view-voucher" data-id="${o.id}" data-url="${o.voucher_url}" title="Ver comprobante">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+             </button>`
+          : '<span style="color:var(--text-muted);font-size:0.8rem">Sin archivo</span>'
+        }
+      </td>
+      <td>${statusBadge}</td>
+      <td><div style="display:flex;gap:4px;">${actions}</div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('ordersTable').style.display = 'table';
+  updatePendingBadge();
+}
+
+document.getElementById('ordersBody').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+
+  if (action === 'approve-order') {
+    const accountId = btn.dataset.account;
+    if (!confirm('¿Aprobar este pedido? La cuenta se marcará como vendida.')) return;
+    const { error: e1 } = await sb.from('orders').update({ status: 'aprobado' }).eq('id', id);
+    const { error: e2 } = await sb.from('accounts').update({ is_available: false }).eq('id', accountId);
+    if (e1 || e2) { toast('Error al aprobar', 'error'); return; }
+    toast('Pedido aprobado ✓', 'success');
+    loadOrders(currentOrderStatus);
+  }
+
+  if (action === 'reject-order') {
+    if (!confirm('¿Rechazar este pedido?')) return;
+    const { error } = await sb.from('orders').update({ status: 'rechazado' }).eq('id', id);
+    if (error) { toast('Error al rechazar', 'error'); return; }
+    toast('Pedido rechazado', '');
+    loadOrders(currentOrderStatus);
+  }
+
+  if (action === 'view-voucher') {
+    const url = btn.dataset.url;
+    document.getElementById('voucherImg').src = url;
+    document.getElementById('voucherInfo').innerHTML = '';
+    document.getElementById('voucherActions').innerHTML = `
+      <a href="${url}" target="_blank" class="btn-secondary">Abrir en nueva pestaña</a>
+    `;
+    openModal('voucherModalOverlay');
+  }
+});
+
+async function updatePendingBadge() {
+  const { count } = await sb.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pendiente');
+  const badge = document.getElementById('pendingBadge');
+  if (count && count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+document.getElementById('voucherModalClose').addEventListener('click', () => closeModal('voucherModalOverlay'));
+
+
+/* ══════════════════════════════════
+   DATOS BANCARIOS
+══════════════════════════════════ */
+
+async function loadBankInfo() {
+  const { data } = await sb.from('bank_info').select('*').limit(1).single();
+  if (!data) return;
+
+  document.getElementById('inputBanco').value   = data.banco || '';
+  document.getElementById('inputClabe').value   = data.clabe || '';
+  document.getElementById('inputTitular').value = data.titular || '';
+  document.getElementById('inputAlias').value   = data.alias || '';
+
+  updateBankPreview();
+}
+
+function updateBankPreview() {
+  const banco   = document.getElementById('inputBanco').value;
+  const clabe   = document.getElementById('inputClabe').value;
+  const titular = document.getElementById('inputTitular').value;
+  const alias   = document.getElementById('inputAlias').value;
+
+  document.getElementById('previewBanco').textContent   = banco || '—';
+  document.getElementById('previewClabe').textContent   = clabe || '—';
+  document.getElementById('previewTitular').textContent = titular || '—';
+
+  const aliasRow = document.getElementById('previewAliasRow');
+  if (alias) {
+    document.getElementById('previewAlias').textContent = alias;
+    aliasRow.style.display = 'flex';
+  } else {
+    aliasRow.style.display = 'none';
+  }
+}
+
+['inputBanco','inputClabe','inputTitular','inputAlias'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateBankPreview);
+});
+
+document.getElementById('bankForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const banco   = document.getElementById('inputBanco').value.trim();
+  const clabe   = document.getElementById('inputClabe').value.trim();
+  const titular = document.getElementById('inputTitular').value.trim();
+  const alias   = document.getElementById('inputAlias').value.trim();
+
+  if (clabe.length !== 18) {
+    toast('La CLABE debe tener 18 dígitos', 'error');
+    return;
+  }
+
+  // Upsert — siempre hay un solo registro
+  const { error } = await sb.from('bank_info').upsert({ id: 1, banco, clabe, titular, alias: alias || null });
+
+  if (error) { toast('Error al guardar', 'error'); return; }
+
+  document.getElementById('saveStatus').textContent = '✓ Guardado';
+  setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 3000);
+  toast('Datos bancarios guardados', 'success');
+});
+
+
+/* ══════════════════════════════════
+   MODAL HELPERS
+══════════════════════════════════ */
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
   });
 });
 
 
-/* ════════════════════════════════════
-   TOAST
-════════════════════════════════════ */
-
-let toastTimeout;
-
-function showToast(msg, type = 'default') {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = `toast toast--${type} show`;
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 2800);
-}
-
-
-/* ════════════════════════════════════
+/* ══════════════════════════════════
    INIT
-   Aquí se inicializa todo vacío.
-   Cuando conectes Supabase, llama:
-     renderProductosTable(dataDeSupabase)
-     renderCuentasTable(dataDeSupabase)
-     renderPedidosTable(dataDeSupabase)
-════════════════════════════════════ */
-
-renderProductosTable([]);
-renderCuentasTable([]);
-renderPedidosTable([]);
-
-// TODO: reemplazar con llamadas reales:
-// const { data } = await supabase.from('products').select('*');
-// renderProductosTable(data);
-
+══════════════════════════════════ */
+loadProducts();
+updatePendingBadge();
 
 }); // fin DOMContentLoaded
