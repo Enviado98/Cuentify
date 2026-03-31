@@ -721,21 +721,9 @@ body {
 }
 
 .buy-price-breakdown {
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px;
 }
-
-.buy-price-row {
-  display: flex; align-items: center; justify-content: space-between;
-}
-
-.buy-price-label { font-size: 0.88rem; color: var(--text-muted); font-weight: 600; }
-.buy-price-val   { font-size: 0.88rem; font-weight: 700; color: var(--text-dark); }
-.buy-price-fee   { color: var(--text-muted); }
-
-.buy-price-divider { height: 1px; background: #F3F4F6; margin: 2px 0; }
-
-.buy-price-total-row { margin-top: 2px; }
 
 .buy-price-total-label {
   font-family: var(--font-body); font-weight: 800; font-size: 1rem;

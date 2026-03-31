@@ -53,8 +53,6 @@ const buyStep1         = document.getElementById('buyStep1');
 const buyStep2         = document.getElementById('buyStep2');
 const buySheetTitle    = document.getElementById('buySheetTitle');
 const buySheetDesc     = document.getElementById('buySheetDesc');
-const buySubtotal      = document.getElementById('buySubtotal');
-const buyFee           = document.getElementById('buyFee');
 const buySheetPrice    = document.getElementById('buySheetPrice');
 const buyHeaderTotal   = document.getElementById('buyHeaderTotal');
 const btnPayAmount     = document.getElementById('btnPayAmount');
@@ -298,20 +296,14 @@ function calcPrice(item) {
 /* ════════════════════════════════════
    BUY SHEET — 2 pasos
 ════════════════════════════════════ */
-const STRIPE_FEE_RATE = 0.036;
-
 function openBuySheet(account, priceDisplay) {
   currentAccount = account;
 
   const price    = parseFloat(account.price) || 0;
-  const fee      = parseFloat((price * STRIPE_FEE_RATE).toFixed(2));
-  const total    = parseFloat((price + fee).toFixed(2));
-  const totalFmt = `$${total.toFixed(2)}`;
+  const totalFmt = `$${price.toFixed(2)}`;
 
   buySheetTitle.textContent = currentProduct ? currentProduct.name : '—';
   buySheetDesc.textContent  = account.description || 'Cuenta disponible';
-  buySubtotal.textContent   = `$${price.toFixed(2)}`;
-  buyFee.textContent        = `$${fee.toFixed(2)}`;
   buySheetPrice.textContent = totalFmt;
 
   buyThumb.innerHTML = '';
