@@ -387,6 +387,9 @@ function switchPayMethod(method) {
   document.getElementById('panelTransfer').style.display = isCard ? 'none'  : 'block';
 }
 
+document.getElementById('payOptCard').addEventListener('click', () => switchPayMethod('card'));
+document.getElementById('payOptTransfer').addEventListener('click', () => switchPayMethod('transfer'));
+
 /* ── Card visual preview ── */
 const cardVisualNumber = document.getElementById('cardVisualNumber');
 const cardVisualName   = document.getElementById('cardVisualName');
