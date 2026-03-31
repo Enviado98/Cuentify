@@ -33,6 +33,7 @@ navItems.forEach(item => {
     document.getElementById('section-' + sec).classList.add('active');
     topbarTitle.textContent = sectionTitles[sec] || sec;
     sidebar.classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
     if (sec === 'productos') loadProducts();
     if (sec === 'cuentas')   loadAccounts();
     if (sec === 'pedidos')   loadOrders('pendiente');
@@ -41,7 +42,13 @@ navItems.forEach(item => {
 });
 
 document.getElementById('sidebarToggle').addEventListener('click', () => {
-  sidebar.classList.toggle('open');
+  const isOpen = sidebar.classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('visible', isOpen);
+});
+
+document.getElementById('sidebarOverlay').addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
 });
 
 // ── TOAST ──

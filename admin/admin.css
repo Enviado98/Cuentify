@@ -49,6 +49,15 @@ body {
    SIDEBAR
 ══════════════════════════════════ */
 
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+}
+.sidebar-overlay.visible { display: block; }
+
 .sidebar {
   width: var(--sidebar-w);
   background: var(--sidebar-bg);
