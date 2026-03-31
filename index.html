@@ -103,16 +103,13 @@
     </div>
   </div>
 
-  <!-- COMPRA SHEET — Paso 1: Resumen | Paso 2: Pago -->
+  <!-- COMPRA: Overlay compartido -->
   <div class="buy-overlay" id="buyOverlay"></div>
+
+  <!-- PASO 1: Resumen del pedido -->
   <div class="buy-sheet" id="buySheet">
     <div class="buy-sheet-handle"></div>
-
-    <div class="buy-steps-viewport">
-    <div class="buy-steps-track" id="buyStepsTrack">
-
-    <!-- ── PASO 1: Resumen ── -->
-    <div class="buy-step" id="buyStep1">
+    <div class="buy-sheet-body">
       <div class="buy-header">
         <span class="buy-header-label">Resumen del pedido</span>
         <button class="buy-close-btn" id="btnBuyCancel" aria-label="Cerrar">
@@ -145,9 +142,12 @@
         <span>Continuar al pago</span>
       </button>
     </div>
+  </div><!-- /buySheet paso 1 -->
 
-    <!-- ── PASO 2: Pago ── -->
-    <div class="buy-step" id="buyStep2">
+  <!-- PASO 2: Pago -->
+  <div class="buy-sheet buy-sheet-pay" id="buySheetPay">
+    <div class="buy-sheet-handle"></div>
+    <div class="buy-sheet-body">
       <div class="buy-header">
         <button class="buy-back-btn" id="btnBackToSummary" aria-label="Volver">
           <iconify-icon icon="lucide:arrow-left" width="18"></iconify-icon>
@@ -262,7 +262,6 @@
       <!-- ══ PANEL TRANSFERENCIA ══ -->
       <div id="panelTransfer" style="display:none;">
 
-        <!-- Tarjeta bancaria -->
         <div class="transfer-bank-card">
           <div class="transfer-bank-label">Banco receptor</div>
           <div class="transfer-bank-name">
@@ -279,7 +278,6 @@
           </div>
         </div>
 
-        <!-- Nota monto exacto -->
         <div class="transfer-amount-note">
           <iconify-icon icon="lucide:alert-triangle" width="16" class="transfer-amount-note-icon"></iconify-icon>
           <div class="transfer-amount-note-text">
@@ -287,7 +285,6 @@
           </div>
         </div>
 
-        <!-- Upload comprobante -->
         <div class="transfer-section-label">Comprobante de pago <span style="color:#EF4444;">*</span></div>
         <div class="transfer-upload-area" id="transferUploadArea">
           <input type="file" id="transferFileInput" class="transfer-upload-input" accept="image/*,.pdf" />
@@ -310,12 +307,8 @@
 
       </div><!-- /panelTransfer -->
 
-    </div><!-- /buyStep2 -->
-
-    </div><!-- /buyStepsTrack -->
-    </div><!-- /buy-steps-viewport -->
-
-  </div><!-- /buySheet -->
+    </div><!-- /buy-sheet-body -->
+  </div><!-- /buySheetPay paso 2 -->
 
   <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

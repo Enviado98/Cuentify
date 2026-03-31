@@ -628,14 +628,22 @@ body {
   box-shadow: 0 -16px 48px rgba(0,0,0,0.18);
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.32, 0, 0.15, 1);
-  padding-bottom: env(safe-area-inset-bottom);
   max-height: 92vh;
-  height: 92vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .buy-sheet.open { transform: translateY(0); }
+
+/* Sheet de pago (paso 2): z-index mayor para tapar el paso 1 */
+.buy-sheet-pay {
+  z-index: 511;
+}
+
+.buy-sheet-body {
+  padding: 16px 20px 40px;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
 
 .buy-sheet-handle {
   width: 36px; height: 4px;
@@ -644,34 +652,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Steps slider ── */
-.buy-steps-viewport {
-  flex: 1;
-  overflow: hidden;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.buy-steps-track {
-  display: flex;
-  width: 100%;
-  flex: 1;
-  transition: transform 0.42s cubic-bezier(0.32, 0, 0.15, 1);
-  will-change: transform;
-}
-.buy-steps-track.at-step-2 {
-  transform: translateX(-100%);
-}
 
-.buy-step {
-  width: 100%;
-  flex-shrink: 0;
-  min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 20px calc(32px + env(safe-area-inset-bottom));
-}
 
 .buy-header {
   display: flex;

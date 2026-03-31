@@ -49,8 +49,7 @@ const accountsEmpty         = document.getElementById('accountsEmpty');
 // ── ELEMENTS: BUY SHEET ──
 const buyOverlay       = document.getElementById('buyOverlay');
 const buySheet         = document.getElementById('buySheet');
-const buyStep1         = document.getElementById('buyStep1');
-const buyStep2         = document.getElementById('buyStep2');
+const buySheetPay      = document.getElementById('buySheetPay');
 const buySheetTitle    = document.getElementById('buySheetTitle');
 const buySheetDesc     = document.getElementById('buySheetDesc');
 const buySheetPrice    = document.getElementById('buySheetPrice');
@@ -320,7 +319,6 @@ function openBuySheet(account, priceDisplay) {
   if (transferNote) transferNote.textContent = totalFmt + ' MXN';
   switchPayMethod('card');
 
-  showBuyStep(1);
   resetPayForm();
   buySheet.classList.add('open');
   buyOverlay.classList.add('visible');
@@ -328,20 +326,17 @@ function openBuySheet(account, priceDisplay) {
 
 function closeBuySheet() {
   buySheet.classList.remove('open');
+  buySheetPay.classList.remove('open');
   buyOverlay.classList.remove('visible');
   currentAccount = null;
 }
 
-const buyStepsTrack = document.getElementById('buyStepsTrack');
-
 function showBuyStep(n) {
   if (n === 2) {
-    buyStepsTrack.classList.add('at-step-2');
+    buySheetPay.classList.add('open');
   } else {
-    buyStepsTrack.classList.remove('at-step-2');
+    buySheetPay.classList.remove('open');
   }
-  // Scroll sheet to top on step change
-  buySheet.scrollTop = 0;
 }
 
 function resetPayForm() {
