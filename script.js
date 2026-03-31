@@ -332,9 +332,16 @@ function closeBuySheet() {
   currentAccount = null;
 }
 
+const buyStepsTrack = document.getElementById('buyStepsTrack');
+
 function showBuyStep(n) {
-  buyStep1.classList.toggle('hidden', n !== 1);
-  buyStep2.classList.toggle('hidden', n !== 2);
+  if (n === 2) {
+    buyStepsTrack.classList.add('at-step-2');
+  } else {
+    buyStepsTrack.classList.remove('at-step-2');
+  }
+  // Scroll sheet to top on step change
+  buySheet.scrollTop = 0;
 }
 
 function resetPayForm() {
@@ -380,11 +387,21 @@ btnBackToSummary.addEventListener('click', () => showBuyStep(1));
 
 /* ── Método de pago ── */
 function switchPayMethod(method) {
-  const isCard = method === 'card';
+  const isCard   = method === 'card';
+  const showEl   = document.getElementById(isCard ? 'panelCard' : 'panelTransfer');
+  const hideEl   = document.getElementById(isCard ? 'panelTransfer' : 'panelCard');
+
   document.getElementById('payOptCard').classList.toggle('active', isCard);
   document.getElementById('payOptTransfer').classList.toggle('active', !isCard);
-  document.getElementById('panelCard').style.display     = isCard ? 'block' : 'none';
-  document.getElementById('panelTransfer').style.display = isCard ? 'none'  : 'block';
+
+  hideEl.style.display = 'none';
+  hideEl.classList.remove('entering');
+
+  showEl.style.display = 'block';
+  // Force reflow so animation triggers
+  void showEl.offsetWidth;
+  showEl.classList.add('entering');
+  showEl.addEventListener('animationend', () => showEl.classList.remove('entering'), { once: true });
 }
 
 document.getElementById('payOptCard').addEventListener('click', () => switchPayMethod('card'));

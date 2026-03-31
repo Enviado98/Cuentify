@@ -630,6 +630,7 @@ body {
   transition: transform 0.4s cubic-bezier(0.32, 0, 0.15, 1);
   padding-bottom: env(safe-area-inset-bottom);
   max-height: 92vh;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -642,8 +643,23 @@ body {
   flex-shrink: 0;
 }
 
-.buy-step { padding: 16px 20px 32px; }
-.buy-step.hidden { display: none; }
+/* ── Steps slider ── */
+.buy-steps-track {
+  display: flex;
+  width: 200%;
+  transition: transform 0.42s cubic-bezier(0.32, 0, 0.15, 1);
+  will-change: transform;
+}
+.buy-steps-track.at-step-2 {
+  transform: translateX(-50%);
+}
+
+.buy-step {
+  width: 50%;
+  flex-shrink: 0;
+  padding: 16px 20px 32px;
+  min-width: 0;
+}
 
 .buy-header {
   display: flex;
@@ -1180,4 +1196,22 @@ body {
   color: #0369A1;
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+/* ── Panel método de pago: fade+slide ── */
+#panelCard,
+#panelTransfer {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#panelCard.entering,
+#panelTransfer.entering {
+  animation-name: panelIn;
 }
