@@ -351,8 +351,14 @@ body {
   overflow: hidden;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
 }
 
@@ -366,6 +372,7 @@ body {
   text-align: left;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .table tbody td {
@@ -374,6 +381,7 @@ body {
   color: var(--text-dark);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .table tbody tr:last-child td { border-bottom: none; }
