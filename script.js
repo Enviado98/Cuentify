@@ -316,6 +316,10 @@ function openBuySheet(account, priceDisplay) {
   buyHeaderTotal.textContent = totalFmt;
   btnPayAmount.textContent   = totalFmt;
 
+  const transferNote = document.getElementById('transferAmountNote');
+  if (transferNote) transferNote.textContent = totalFmt + ' MXN';
+  switchPayMethod('card');
+
   showBuyStep(1);
   resetPayForm();
   buySheet.classList.add('open');
@@ -342,6 +346,31 @@ function resetPayForm() {
   btnBuy.querySelector('.btn-buy-text').innerHTML =
     'Pagar <span id="btnPayAmount">' + (buyHeaderTotal.textContent || '$0.00') + '</span>';
   btnBuy.disabled = false;
+
+  // Reset card visual
+  const cvn = document.getElementById('cardVisualNumber');
+  const cvna = document.getElementById('cardVisualName');
+  const cve = document.getElementById('cardVisualExpiry');
+  const cvb = document.getElementById('cardVisualBrand');
+  if (cvn)  cvn.textContent  = '•••• •••• •••• ••••';
+  if (cvna) cvna.textContent = 'NOMBRE COMPLETO';
+  if (cve)  cve.textContent  = 'MM / AA';
+  if (cvb)  cvb.innerHTML    = '';
+
+  // Reset upload transfer
+  const area = document.getElementById('transferUploadArea');
+  const fi   = document.getElementById('transferFileInput');
+  if (fi)   fi.value = '';
+  if (area) {
+    area.classList.remove('has-file');
+    area.style.borderColor = '';
+    const icon  = document.getElementById('transferUploadIcon');
+    const title = document.getElementById('transferUploadTitle');
+    const sub   = document.getElementById('transferUploadSub');
+    if (icon)  icon.innerHTML    = '<iconify-icon icon="lucide:upload-cloud" width="22" style="color:#4F46E5;"></iconify-icon>';
+    if (title) title.textContent = 'Adjuntar captura';
+    if (sub)   sub.textContent   = 'JPG, PNG o PDF · Máx. 5 MB';
+  }
 }
 
 buyOverlay.addEventListener('click', closeBuySheet);
@@ -349,19 +378,96 @@ btnBuyCancel.addEventListener('click', closeBuySheet);
 btnGoToPayment.addEventListener('click', () => showBuyStep(2));
 btnBackToSummary.addEventListener('click', () => showBuyStep(1));
 
+/* ── Método de pago ── */
+function switchPayMethod(method) {
+  const isCard = method === 'card';
+  document.getElementById('payOptCard').classList.toggle('active', isCard);
+  document.getElementById('payOptTransfer').classList.toggle('active', !isCard);
+  document.getElementById('panelCard').style.display     = isCard ? 'block' : 'none';
+  document.getElementById('panelTransfer').style.display = isCard ? 'none'  : 'block';
+}
+
+/* ── Card visual preview ── */
+const cardVisualNumber = document.getElementById('cardVisualNumber');
+const cardVisualName   = document.getElementById('cardVisualName');
+const cardVisualExpiry = document.getElementById('cardVisualExpiry');
+const cardVisualBrand  = document.getElementById('cardVisualBrand');
+
+const CARD_BRANDS = {
+  visa:       { pattern: /^4/,            icon: '<iconify-icon icon="logos:visa" width="42" height="28"></iconify-icon>' },
+  mastercard: { pattern: /^5[1-5]|^2[2-7]/, icon: '<iconify-icon icon="logos:mastercard" width="42" height="28"></iconify-icon>' },
+  amex:       { pattern: /^3[47]/,        icon: '<iconify-icon icon="logos:amex" width="42" height="28"></iconify-icon>' },
+};
+
+function detectBrand(num) {
+  for (const [, b] of Object.entries(CARD_BRANDS)) {
+    if (b.pattern.test(num)) return b.icon;
+  }
+  return '';
+}
+
 document.getElementById('cardNumber').addEventListener('input', function () {
   let v = this.value.replace(/\D/g, '').substring(0, 16);
   this.value = v.replace(/(.{4})/g, '$1 ').trim();
+  const raw = v.padEnd(16, '•');
+  cardVisualNumber.textContent =
+    raw.substring(0,4) + ' ' + raw.substring(4,8) + ' ' + raw.substring(8,12) + ' ' + raw.substring(12,16);
+  cardVisualBrand.innerHTML = detectBrand(v);
 });
+
 document.getElementById('cardExpiry').addEventListener('input', function () {
   let v = this.value.replace(/\D/g, '').substring(0, 4);
   if (v.length >= 2) v = v.substring(0, 2) + ' / ' + v.substring(2);
   this.value = v;
+  cardVisualExpiry.textContent = v || 'MM / AA';
 });
+
 document.getElementById('cardCvv').addEventListener('input', function () {
   this.value = this.value.replace(/\D/g, '').substring(0, 4);
 });
 
+document.getElementById('cardName').addEventListener('input', function () {
+  cardVisualName.textContent = this.value.trim().toUpperCase() || 'NOMBRE COMPLETO';
+});
+
+/* ── Copiar CLABE ── */
+document.getElementById('transferCopyBtn').addEventListener('click', function () {
+  navigator.clipboard.writeText('127290013355244437').catch(() => {});
+  this.classList.add('copied');
+  this.innerHTML = '<iconify-icon icon="lucide:check" width="13"></iconify-icon> Copiado';
+  setTimeout(() => {
+    this.classList.remove('copied');
+    this.innerHTML = '<iconify-icon icon="lucide:copy" width="13"></iconify-icon> Copiar';
+  }, 2000);
+});
+
+/* ── Upload comprobante ── */
+const transferFileInput  = document.getElementById('transferFileInput');
+const transferUploadArea = document.getElementById('transferUploadArea');
+
+transferUploadArea.addEventListener('click', () => transferFileInput.click());
+transferFileInput.addEventListener('change', function () {
+  if (!this.files || !this.files[0]) return;
+  const name = this.files[0].name;
+  transferUploadArea.classList.add('has-file');
+  document.getElementById('transferUploadIcon').innerHTML =
+    '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
+  document.getElementById('transferUploadTitle').textContent =
+    name.length > 28 ? name.substring(0, 25) + '…' : name;
+  document.getElementById('transferUploadSub').textContent = 'Comprobante adjuntado ✓';
+});
+
+/* ── Enviar comprobante (sin lógica aún) ── */
+document.getElementById('btnTransferSend').addEventListener('click', () => {
+  if (!transferFileInput.files || !transferFileInput.files[0]) {
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
+    return;
+  }
+  // TODO: Subir comprobante a Supabase y crear pedido pendiente
+});
+
+/* ── Pagar con tarjeta ── */
 btnBuy.addEventListener('click', async () => {
   if (btnBuy.disabled) return;
 

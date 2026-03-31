@@ -153,74 +153,159 @@
         <div class="buy-header-total" id="buyHeaderTotal">$0.00</div>
       </div>
 
+      <!-- Selector de método -->
       <div class="pay-method-row">
-        <div class="pay-method-opt active" id="payOptCard">
+        <div class="pay-method-opt active" id="payOptCard" onclick="switchPayMethod('card')">
           <iconify-icon icon="lucide:credit-card" width="16"></iconify-icon>
           <span>Tarjeta</span>
         </div>
+        <div class="pay-method-opt" id="payOptTransfer" onclick="switchPayMethod('transfer')">
+          <iconify-icon icon="lucide:building-2" width="16"></iconify-icon>
+          <span>Transferencia</span>
+        </div>
       </div>
 
-      <div class="pay-brands">
-        <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
-        <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
-        <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
-      </div>
-
-      <div class="pay-form">
-        <div class="pay-field-group">
-          <label class="pay-label">Número de tarjeta</label>
-          <div class="pay-input-wrap">
-            <iconify-icon icon="lucide:credit-card" width="17" class="pay-input-icon"></iconify-icon>
-            <input class="pay-input" id="cardNumber" type="text"
-              inputmode="numeric" maxlength="19"
-              placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
-          </div>
+      <!-- ══ PANEL TARJETA ══ -->
+      <div id="panelCard">
+        <div class="pay-brands">
+          <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
+          <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
+          <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
         </div>
 
-        <div class="pay-row">
-          <div class="pay-field-group">
-            <label class="pay-label">Vencimiento</label>
-            <div class="pay-input-wrap">
-              <input class="pay-input" id="cardExpiry" type="text"
-                inputmode="numeric" maxlength="5"
-                placeholder="MM / AA" autocomplete="cc-exp" />
+        <div class="card-visual-wrap">
+          <div class="card-visual" id="cardVisual">
+            <div class="card-visual-top">
+              <div class="card-visual-chip">
+                <div class="chip-line"></div><div class="chip-line"></div><div class="chip-line"></div>
+              </div>
+              <iconify-icon icon="lucide:wifi" width="20" class="card-visual-nfc"></iconify-icon>
+            </div>
+            <div class="card-visual-number" id="cardVisualNumber">•••• •••• •••• ••••</div>
+            <div class="card-visual-bottom">
+              <div class="card-visual-holder">
+                <div class="card-visual-sub">Titular</div>
+                <div class="card-visual-val" id="cardVisualName">NOMBRE COMPLETO</div>
+              </div>
+              <div class="card-visual-expiry">
+                <div class="card-visual-sub">Vence</div>
+                <div class="card-visual-val" id="cardVisualExpiry">MM / AA</div>
+              </div>
+              <div class="card-visual-brand" id="cardVisualBrand"></div>
             </div>
           </div>
+        </div>
+
+        <div class="pay-form">
           <div class="pay-field-group">
-            <label class="pay-label">CVV</label>
+            <label class="pay-label">Número de tarjeta</label>
             <div class="pay-input-wrap">
-              <input class="pay-input" id="cardCvv" type="text"
-                inputmode="numeric" maxlength="4"
-                placeholder="•••" autocomplete="cc-csc" />
-              <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
+              <iconify-icon icon="lucide:credit-card" width="17" class="pay-input-icon"></iconify-icon>
+              <input class="pay-input" id="cardNumber" type="text"
+                inputmode="numeric" maxlength="19"
+                placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+            </div>
+          </div>
+
+          <div class="pay-row">
+            <div class="pay-field-group">
+              <label class="pay-label">Vencimiento</label>
+              <div class="pay-input-wrap">
+                <iconify-icon icon="lucide:calendar" width="16" class="pay-input-icon"></iconify-icon>
+                <input class="pay-input" id="cardExpiry" type="text"
+                  inputmode="numeric" maxlength="7" style="padding-left:40px;"
+                  placeholder="MM / AA" autocomplete="cc-exp" />
+              </div>
+            </div>
+            <div class="pay-field-group">
+              <label class="pay-label">CVV</label>
+              <div class="pay-input-wrap">
+                <iconify-icon icon="lucide:lock" width="16" class="pay-input-icon"></iconify-icon>
+                <input class="pay-input" id="cardCvv" type="text"
+                  inputmode="numeric" maxlength="4" style="padding-left:40px;"
+                  placeholder="•••" autocomplete="cc-csc" />
+                <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
+              </div>
+            </div>
+          </div>
+
+          <div class="pay-field-group">
+            <label class="pay-label">Nombre en la tarjeta</label>
+            <div class="pay-input-wrap">
+              <iconify-icon icon="lucide:user" width="16" class="pay-input-icon"></iconify-icon>
+              <input class="pay-input" id="cardName" type="text"
+                placeholder="Como aparece en la tarjeta"
+                autocomplete="cc-name" style="text-transform:uppercase; padding-left:40px;" />
             </div>
           </div>
         </div>
 
-        <div class="pay-field-group">
-          <label class="pay-label">Nombre en la tarjeta</label>
-          <div class="pay-input-wrap">
-            <input class="pay-input" id="cardName" type="text"
-              placeholder="Como aparece en la tarjeta"
-              autocomplete="cc-name" style="text-transform:uppercase;" />
+        <button class="btn-buy-primary btn-pay-now" id="btnBuy">
+          <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
+          <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span></span>
+          <span class="btn-buy-spinner"></span>
+        </button>
+
+        <div class="pay-footer-badges">
+          <iconify-icon icon="simple-icons:stripe" width="36" style="color:#635BFF"></iconify-icon>
+          <span class="pay-footer-sep">·</span>
+          <iconify-icon icon="lucide:shield-check" width="14" style="color:#16a34a"></iconify-icon>
+          <span class="pay-footer-text">Cifrado SSL 256-bit</span>
+          <span class="pay-footer-sep">·</span>
+          <span class="pay-footer-text">PCI DSS</span>
+        </div>
+      </div><!-- /panelCard -->
+
+      <!-- ══ PANEL TRANSFERENCIA ══ -->
+      <div id="panelTransfer" style="display:none;">
+
+        <!-- Tarjeta bancaria -->
+        <div class="transfer-bank-card">
+          <div class="transfer-bank-label">Banco receptor</div>
+          <div class="transfer-bank-name">
+            Banco Azteca
+            <span class="transfer-bank-badge">AZTECA</span>
+          </div>
+          <div class="transfer-clabe-label">CLABE interbancaria</div>
+          <div class="transfer-clabe-row">
+            <div class="transfer-clabe-number">1272 9001 3355 2444 37</div>
+            <button class="transfer-copy-btn" id="transferCopyBtn" type="button">
+              <iconify-icon icon="lucide:copy" width="13"></iconify-icon>
+              Copiar
+            </button>
           </div>
         </div>
-      </div>
 
-      <button class="btn-buy-primary btn-pay-now" id="btnBuy">
-        <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
-        <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span></span>
-        <span class="btn-buy-spinner"></span>
-      </button>
+        <!-- Nota monto exacto -->
+        <div class="transfer-amount-note">
+          <iconify-icon icon="lucide:alert-triangle" width="16" class="transfer-amount-note-icon"></iconify-icon>
+          <div class="transfer-amount-note-text">
+            Transfiere exactamente <strong id="transferAmountNote">$0.00 MXN</strong>. Montos incorrectos pueden retrasar la verificación.
+          </div>
+        </div>
 
-      <div class="pay-footer-badges">
-        <iconify-icon icon="simple-icons:stripe" width="36" style="color:#635BFF"></iconify-icon>
-        <span class="pay-footer-sep">·</span>
-        <iconify-icon icon="lucide:shield-check" width="14" style="color:#16a34a"></iconify-icon>
-        <span class="pay-footer-text">Cifrado SSL 256-bit</span>
-        <span class="pay-footer-sep">·</span>
-        <span class="pay-footer-text">PCI DSS</span>
-      </div>
+        <!-- Upload comprobante -->
+        <div class="transfer-section-label">Comprobante de pago <span style="color:#EF4444;">*</span></div>
+        <div class="transfer-upload-area" id="transferUploadArea">
+          <input type="file" id="transferFileInput" class="transfer-upload-input" accept="image/*,.pdf" />
+          <div class="transfer-upload-icon" id="transferUploadIcon">
+            <iconify-icon icon="lucide:upload-cloud" width="22" style="color:#4F46E5;"></iconify-icon>
+          </div>
+          <div class="transfer-upload-title" id="transferUploadTitle">Adjuntar captura</div>
+          <div class="transfer-upload-sub" id="transferUploadSub">JPG, PNG o PDF · Máx. 5 MB</div>
+        </div>
+
+        <button class="btn-buy-primary btn-transfer-send" id="btnTransferSend">
+          <iconify-icon icon="lucide:send" width="16"></iconify-icon>
+          <span>Enviar comprobante</span>
+        </button>
+
+        <div class="transfer-pending-note">
+          <iconify-icon icon="lucide:clock" width="14"></iconify-icon>
+          Tu pedido quedará en revisión hasta confirmar la transferencia.
+        </div>
+
+      </div><!-- /panelTransfer -->
 
     </div><!-- /buyStep2 -->
 
