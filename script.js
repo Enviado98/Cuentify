@@ -317,6 +317,12 @@ function openBuySheet(account, priceDisplay) {
 
   const transferNote = document.getElementById('transferAmountNote');
   if (transferNote) transferNote.textContent = totalFmt + ' MXN';
+
+  // Generar código de referencia único para esta compra
+  const refCode = 'CNT-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+  const refEl = document.getElementById('transferRefCode');
+  if (refEl) refEl.textContent = refCode;
+
   switchPayMethod('card');
 
   resetPayForm();
@@ -345,9 +351,11 @@ function resetPayForm() {
     if (el) el.value = '';
   });
   btnBuy.classList.remove('loading');
-  btnBuy.querySelector('.btn-buy-text').innerHTML =
-    'Pagar <span id="btnPayAmount">' + (buyHeaderTotal.textContent || '$0.00') + '</span>';
   btnBuy.disabled = false;
+
+  // Actualizar solo el span de monto, sin reconstruir innerHTML
+  const amountSpan = document.getElementById('btnPayAmount');
+  if (amountSpan) amountSpan.textContent = buyHeaderTotal.textContent || '$0.00';
 
   // Reset card visual
   const cvn = document.getElementById('cardVisualNumber');
@@ -508,12 +516,12 @@ btnBuy.addEventListener('click', async () => {
 function shakeInput(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.style.borderColor = '#EF4444';
+  el.classList.add('error');
   el.style.animation = 'shake 0.35s ease';
   setTimeout(() => {
-    el.style.borderColor = '';
+    el.classList.remove('error');
     el.style.animation = '';
-  }, 400);
+  }, 500);
 }
 
 function showSuccessToast() {

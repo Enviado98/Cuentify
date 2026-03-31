@@ -216,7 +216,7 @@
               <div class="pay-input-wrap">
                 <iconify-icon icon="lucide:calendar" width="16" class="pay-input-icon"></iconify-icon>
                 <input class="pay-input" id="cardExpiry" type="text"
-                  inputmode="numeric" maxlength="7" style="padding-left:40px;"
+                  inputmode="numeric" maxlength="7"
                   placeholder="MM / AA" autocomplete="cc-exp" />
               </div>
             </div>
@@ -225,7 +225,7 @@
               <div class="pay-input-wrap">
                 <iconify-icon icon="lucide:lock" width="16" class="pay-input-icon"></iconify-icon>
                 <input class="pay-input" id="cardCvv" type="text"
-                  inputmode="numeric" maxlength="4" style="padding-left:40px;"
+                  inputmode="numeric" maxlength="4"
                   placeholder="•••" autocomplete="cc-csc" />
                 <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
               </div>
@@ -236,9 +236,9 @@
             <label class="pay-label">Nombre en la tarjeta</label>
             <div class="pay-input-wrap">
               <iconify-icon icon="lucide:user" width="16" class="pay-input-icon"></iconify-icon>
-              <input class="pay-input" id="cardName" type="text"
+              <input class="pay-input pay-input-name" id="cardName" type="text"
                 placeholder="Como aparece en la tarjeta"
-                autocomplete="cc-name" style="text-transform:uppercase; padding-left:40px;" />
+                autocomplete="cc-name" />
             </div>
           </div>
         </div>
@@ -285,6 +285,11 @@
           </div>
         </div>
 
+        <div class="transfer-ref-note">
+          <iconify-icon icon="lucide:tag" width="14"></iconify-icon>
+          <span>Concepto: <strong id="transferRefCode">—</strong> (escríbelo en la transferencia)</span>
+        </div>
+
         <div class="transfer-section-label">Comprobante de pago <span style="color:#EF4444;">*</span></div>
         <div class="transfer-upload-area" id="transferUploadArea">
           <input type="file" id="transferFileInput" class="transfer-upload-input" accept="image/*,.pdf" />
@@ -301,8 +306,8 @@
         </button>
 
         <div class="transfer-pending-note">
-          <iconify-icon icon="lucide:clock" width="14"></iconify-icon>
-          Tu pedido quedará en revisión hasta confirmar la transferencia.
+          <iconify-icon icon="lucide:clock" width="16"></iconify-icon>
+          <span>Tu pedido quedará en revisión hasta que confirmemos la transferencia. Recibirás tus datos en un máximo de <strong>12 horas</strong>.</span>
         </div>
 
       </div><!-- /panelTransfer -->

@@ -732,6 +732,9 @@ body {
 .buy-price-breakdown {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px;
+  padding: 14px 0;
+  border-top: 1.5px solid #F3F4F6;
+  border-bottom: 1.5px solid #F3F4F6;
 }
 
 .buy-price-total-label {
@@ -782,8 +785,8 @@ body {
 }
 
 .pay-brands {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 20px; padding: 12px 14px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  margin-bottom: 20px; padding: 10px 14px;
   background: #F8F9FB; border-radius: 12px;
 }
 
@@ -804,6 +807,8 @@ body {
 .pay-input-icon {
   position: absolute; left: 13px;
   color: var(--text-muted); pointer-events: none; flex-shrink: 0;
+  min-width: 17px; min-height: 17px;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .pay-input-icon-right {
@@ -812,7 +817,7 @@ body {
 }
 
 .pay-input {
-  width: 100%; padding: 13px 14px;
+  width: 100%; padding: 13px 14px 13px 40px;
   border: 1.5px solid #E5E7EB; border-radius: 11px;
   font-family: var(--font-body); font-size: 0.95rem;
   color: var(--text-dark); background: var(--white);
@@ -824,7 +829,12 @@ body {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
-#cardNumber { padding-left: 40px; letter-spacing: 0.08em; }
+.pay-input.error {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+#cardNumber { letter-spacing: 0.08em; }
+.pay-input-name { text-transform: uppercase; }
 
 .btn-pay-now { position: relative; overflow: hidden; }
 
@@ -842,10 +852,10 @@ body {
 .pay-footer-badges {
   display: flex; align-items: center; justify-content: center;
   gap: 6px; margin-top: 14px;
-  flex-wrap: wrap;
+  min-height: 24px;
 }
 .pay-footer-sep  { color: #D1D5DB; font-size: 0.75rem; }
-.pay-footer-text { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); }
+.pay-footer-text { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
 
 
 /* ══════════════════════════════════
@@ -894,12 +904,12 @@ body {
 .card-visual {
   background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
   border-radius: 18px;
-  padding: 20px 20px 16px;
+  padding: 18px 18px 14px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 28px rgba(37,99,235,0.30);
   transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  min-height: 150px;
+  min-height: 138px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1116,6 +1126,29 @@ body {
 }
 .transfer-amount-note-text strong { color: #78350F; }
 
+.transfer-ref-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #F8F9FB;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.transfer-ref-note strong {
+  color: var(--text-dark);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.transfer-ref-note iconify-icon {
+  flex-shrink: 0;
+  color: var(--blue);
+}
+
 .transfer-section-label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1180,15 +1213,21 @@ body {
 
 .transfer-pending-note {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: #F0F9FF;
-  border-radius: 10px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #EFF6FF;
+  border: 1.5px solid #BFDBFE;
+  border-radius: 12px;
   margin-top: 14px;
-  color: #0369A1;
-  font-size: 0.75rem;
+  color: #1D4ED8;
+  font-size: 0.78rem;
   font-weight: 700;
+  line-height: 1.45;
+}
+.transfer-pending-note iconify-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* ── Panel método de pago: fade+slide ── */
