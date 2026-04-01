@@ -19,7 +19,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const sidebar     = document.getElementById('sidebar');
 const overlay     = document.getElementById('sidebarOverlay');
 
-const titles = { productos:'Productos', cuentas:'Cuentas', pedidos:'Pedidos', banco:'Datos bancarios' };
+const titles = { productos:'Productos', cuentas:'Cuentas', pedidos:'Pedidos', tendencias:'Tendencias', banco:'Datos bancarios' };
 
 navItems.forEach(item => {
   item.addEventListener('click', e => {
@@ -31,10 +31,11 @@ navItems.forEach(item => {
     document.getElementById('section-' + sec).classList.add('active');
     topbarTitle.textContent = titles[sec] || sec;
     closeSidebar();
-    if (sec === 'productos') loadProducts();
-    if (sec === 'cuentas')   loadAccounts();
-    if (sec === 'pedidos')   loadOrders('pendiente');
-    if (sec === 'banco')     loadBankInfo();
+    if (sec === 'productos')   loadProducts();
+    if (sec === 'cuentas')     loadAccounts();
+    if (sec === 'pedidos')     loadOrders('pendiente');
+    if (sec === 'tendencias')  loadTrends();
+    if (sec === 'banco')       loadBankInfo();
   });
 });
 
@@ -618,8 +619,173 @@ document.getElementById('bankForm').addEventListener('submit', async e => {
 });
 
 /* ══════════════════════════════════
-   MODALES
+   TENDENCIAS
 ══════════════════════════════════ */
+let allTrends = [];
+
+async function loadTrends() {
+  const loadingEl = document.getElementById('trendsLoading');
+  const tableWrap = document.getElementById('trendsTableWrap');
+  const cardsEl   = document.getElementById('trendsCards');
+  const emptyEl   = document.getElementById('trendsEmpty');
+
+  loadingEl.style.display = 'flex';
+  tableWrap.style.display = 'none';
+  cardsEl.style.display   = 'none';
+  emptyEl.style.display   = 'none';
+
+  const { data, error } = await sb.from('trends').select('*').order('sort_order', { ascending: true });
+
+  if (error || !data || !data.length) {
+    loadingEl.style.display = 'none';
+    emptyEl.style.display = 'flex';
+    return;
+  }
+
+  allTrends = data;
+
+  // ── Tabla (desktop) ──
+  const tbody = document.getElementById('trendsBody');
+  tbody.innerHTML = '';
+  data.forEach(t => {
+    const badge = `<span class="badge badge--${t.active ? 'green' : 'red'}"><span class="badge-dot"></span>${t.active ? 'Visible' : 'Oculto'}</span>`;
+    const preview = t.image_url
+      ? `<img style="width:72px;height:34px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" src="${t.image_url}" alt="" />`
+      : `<div style="width:72px;height:34px;border-radius:6px;background:${t.bg_color || '#1e293b'};"></div>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${preview}</td>
+      <td><strong>${t.name}</strong></td>
+      <td>${t.label || '—'}</td>
+      <td>${t.sort_order ?? 0}</td>
+      <td>${badge}</td>
+      <td>${actionBtns('edit-trend', 'delete-trend', t.id)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // ── Cards (móvil) ──
+  const cardsContainer = document.getElementById('trendsCards');
+  cardsContainer.innerHTML = '';
+  data.forEach(t => {
+    const badge = `<span class="badge badge--${t.active ? 'green' : 'red'}"><span class="badge-dot"></span>${t.active ? 'Visible' : 'Oculto'}</span>`;
+    const preview = t.image_url
+      ? `<img style="width:100%;height:80px;object-fit:cover;border-radius:10px;margin-bottom:8px;" src="${t.image_url}" alt="" />`
+      : `<div style="width:100%;height:80px;border-radius:10px;background:${t.bg_color || '#1e293b'};margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+           <span style="color:#fff;font-weight:800;font-size:1rem;">${t.name}</span>
+         </div>`;
+    const div = document.createElement('div');
+    div.className = 'data-card';
+    div.innerHTML = `
+      <div class="data-card-header">
+        <div class="data-card-title"><span>${t.name}</span></div>
+        <div class="data-card-actions">${actionBtns('edit-trend', 'delete-trend', t.id)}</div>
+      </div>
+      ${preview}
+      <div class="data-card-fields">
+        <div class="data-card-field">
+          <span class="data-card-field-label">Etiqueta</span>
+          <span class="data-card-field-value">${t.label || '—'}</span>
+        </div>
+        <div class="data-card-field">
+          <span class="data-card-field-label">Orden</span>
+          <span class="data-card-field-value">${t.sort_order ?? 0}</span>
+        </div>
+        <div class="data-card-field">
+          <span class="data-card-field-label">Estado</span>
+          <span class="data-card-field-value">${badge}</span>
+        </div>
+      </div>`;
+    cardsContainer.appendChild(div);
+  });
+
+  showSection('trendsLoading', 'trendsTableWrap', 'trendsCards', 'trendsEmpty', true);
+}
+
+// Delegación de eventos en tabla y cards
+document.getElementById('trendsBody').addEventListener('click', handleTrendAction);
+document.getElementById('trendsCards').addEventListener('click', handleTrendAction);
+
+async function handleTrendAction(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const { action, id } = btn.dataset;
+
+  if (action === 'edit-trend') {
+    const t = allTrends.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('trendId').value        = t.id;
+    document.getElementById('trendName').value      = t.name;
+    document.getElementById('trendLabel').value     = t.label || '';
+    document.getElementById('trendImage').value     = t.image_url || '';
+    document.getElementById('trendColor').value     = t.bg_color || '#1e293b';
+    document.getElementById('trendColorText').value = t.bg_color || '#1e293b';
+    document.getElementById('trendOrder').value     = t.sort_order ?? 0;
+    document.getElementById('trendLinkTab').value   = t.link_tab || '';
+    document.getElementById('trendActive').checked  = t.active !== false;
+    document.getElementById('trendModalTitle').textContent = 'Editar tendencia';
+    openModal('trendModalOverlay');
+  }
+
+  if (action === 'delete-trend') {
+    if (!confirm('¿Eliminar esta tendencia?')) return;
+    await sb.from('trends').delete().eq('id', id);
+    toast('Tendencia eliminada', 'success');
+    loadTrends();
+  }
+}
+
+// Sincronizar color picker ↔ texto
+document.getElementById('trendColor').addEventListener('input', e => {
+  document.getElementById('trendColorText').value = e.target.value;
+});
+document.getElementById('trendColorText').addEventListener('input', e => {
+  const v = e.target.value;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById('trendColor').value = v;
+});
+
+// Botones abrir modal
+document.getElementById('btnNewTrend').addEventListener('click', () => { clearTrendForm(); openModal('trendModalOverlay'); });
+document.getElementById('btnNewTrendEmpty')?.addEventListener('click', () => { clearTrendForm(); openModal('trendModalOverlay'); });
+document.getElementById('trendModalClose').addEventListener('click', () => closeModal('trendModalOverlay'));
+document.getElementById('trendModalCancel').addEventListener('click', () => closeModal('trendModalOverlay'));
+
+function clearTrendForm() {
+  document.getElementById('trendId').value        = '';
+  document.getElementById('trendName').value      = '';
+  document.getElementById('trendLabel').value     = '';
+  document.getElementById('trendImage').value     = '';
+  document.getElementById('trendColor').value     = '#1e293b';
+  document.getElementById('trendColorText').value = '#1e293b';
+  document.getElementById('trendOrder').value     = '0';
+  document.getElementById('trendLinkTab').value   = '';
+  document.getElementById('trendActive').checked  = true;
+  document.getElementById('trendModalTitle').textContent = 'Nueva tendencia';
+}
+
+document.getElementById('trendForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('trendId').value;
+  const payload = {
+    name:       document.getElementById('trendName').value.trim(),
+    label:      document.getElementById('trendLabel').value.trim() || null,
+    image_url:  document.getElementById('trendImage').value.trim() || null,
+    bg_color:   document.getElementById('trendColorText').value.trim() || '#1e293b',
+    sort_order: parseInt(document.getElementById('trendOrder').value) || 0,
+    link_tab:   document.getElementById('trendLinkTab').value || null,
+    active:     document.getElementById('trendActive').checked,
+  };
+
+  const { error } = id
+    ? await sb.from('trends').update(payload).eq('id', id)
+    : await sb.from('trends').insert(payload);
+
+  if (error) { toast('Error al guardar: ' + error.message, 'error'); return; }
+  toast(id ? 'Tendencia actualizada' : 'Tendencia creada', 'success');
+  closeModal('trendModalOverlay');
+  loadTrends();
+});
+
+
 function openModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 

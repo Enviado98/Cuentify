@@ -909,3 +909,25 @@ html, body {
   border-radius: 8px;
   display: block;
 }
+
+/* ══════════════════════════════════
+   TENDENCIAS — admin
+══════════════════════════════════ */
+
+/* Vista previa del banner en la tabla desktop */
+.trend-preview-banner {
+  width: 90px;
+  height: 42px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  display: block;
+}
+
+/* Color swatch fallback */
+.trend-preview-color {
+  width: 90px;
+  height: 42px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+}
