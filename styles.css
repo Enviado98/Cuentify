@@ -215,13 +215,14 @@ body {
 ══════════════════════════════════ */
 
 .main-content {
-  padding: 10px 16px 100px;
+  padding: 10px 0 100px;
 }
 
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(clamp(90px, 28vw, 160px), 1fr));
   gap: clamp(8px, 2vw, 16px);
+  padding: 0 16px;
 }
 
 .product-card {
@@ -1591,6 +1592,7 @@ body {
 .trends-section {
   padding: 20px 0 4px;
   margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .trends-title {
@@ -1599,6 +1601,7 @@ body {
   font-weight: 800;
   color: var(--text-dark);
   margin-bottom: 12px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1612,7 +1615,7 @@ body {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding: 0 16px 6px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -1712,6 +1715,7 @@ body {
   font-weight: 800;
   color: var(--text-dark);
   margin-bottom: 12px;
+  padding: 0 16px;
 }
 
 .under-construction {
