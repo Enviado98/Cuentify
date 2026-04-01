@@ -23,6 +23,190 @@ let currentTab     = 'streaming';
 let menuOpen       = false;
 let currentProduct = null;
 let currentAccount = null;
+let currentUser    = null;          // sesión activa de Supabase Auth
+let pendingAccount = null;          // cuenta que el usuario quería comprar antes del login
+
+/* ════════════════════════════════════
+   AUTH — Google + Email/Password
+════════════════════════════════════ */
+const APP_URL = 'https://cuentify.onrender.com';
+
+// ── Elementos del modal ──
+const authOverlay          = document.getElementById('authOverlay');
+const authModal            = document.getElementById('authModal');
+const authCloseBtn         = document.getElementById('authCloseBtn');
+const authGoogleBtn        = document.getElementById('authGoogleBtn');
+const authLoginBtn         = document.getElementById('authLoginBtn');
+const authRegisterBtn      = document.getElementById('authRegisterBtn');
+const authSwitchToRegister = document.getElementById('authSwitchToRegister');
+const authSwitchToLogin    = document.getElementById('authSwitchToLogin');
+const authError            = document.getElementById('authError');
+const authSubtitle         = document.getElementById('authSubtitle');
+const menuUserSection      = document.getElementById('menuUserSection');
+const menuLoginSection     = document.getElementById('menuLoginSection');
+const menuLogoutBtn        = document.getElementById('menuLogoutBtn');
+const menuLoginBtn         = document.getElementById('menuLoginBtn');
+
+function openAuthModal(subtitle = 'Inicia sesión para continuar con tu compra') {
+  authSubtitle.textContent = subtitle;
+  authError.style.display = 'none';
+  authOverlay.classList.add('visible');
+  // Mostrar modal con un pequeño delay para que la animación funcione
+  requestAnimationFrame(() => {
+    authModal.style.display = 'block';
+    requestAnimationFrame(() => authModal.classList.add('visible'));
+  });
+}
+
+function closeAuthModal() {
+  authModal.classList.remove('visible');
+  authOverlay.classList.remove('visible');
+  setTimeout(() => { authModal.style.display = 'none'; }, 220);
+  authError.style.display = 'none';
+}
+
+function showAuthError(msg) {
+  authError.textContent = msg;
+  authError.style.display = 'block';
+}
+
+function switchAuthForm(form) {
+  authError.style.display = 'none';
+  if (form === 'register') {
+    document.getElementById('authFormLogin').style.display = 'none';
+    document.getElementById('authFormRegister').style.display = 'flex';
+  } else {
+    document.getElementById('authFormRegister').style.display = 'none';
+    document.getElementById('authFormLogin').style.display = 'flex';
+  }
+}
+
+// ── Actualizar UI del menú según sesión ──
+function updateMenuAuth(user) {
+  currentUser = user;
+  if (user) {
+    menuLoginSection.style.display = 'none';
+    menuUserSection.style.display  = 'flex';
+
+    const name  = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+    const email = user.email || '';
+    const avatar = user.user_metadata?.avatar_url;
+
+    document.getElementById('menuUserName').textContent  = name;
+    document.getElementById('menuUserEmail').textContent = email;
+
+    const avatarEl = document.getElementById('menuUserAvatar');
+    if (avatar) {
+      avatarEl.innerHTML = `<img src="${avatar}" alt="${name}" />`;
+    } else {
+      avatarEl.textContent = name.charAt(0).toUpperCase();
+    }
+  } else {
+    menuLoginSection.style.display = 'block';
+    menuUserSection.style.display  = 'none';
+  }
+}
+
+// ── Escuchar cambios de sesión ──
+supabase.auth.onAuthStateChange((_event, session) => {
+  updateMenuAuth(session?.user || null);
+
+  // Si acaba de loguearse y había una cuenta pendiente, continuar al pago
+  if (session?.user && pendingAccount) {
+    const account = pendingAccount;
+    pendingAccount = null;
+    closeAuthModal();
+    // Pequeño delay para que el modal cierre primero
+    setTimeout(() => {
+      openBuySheet(account, `$${parseFloat(account.price || 0).toFixed(2)}`);
+    }, 280);
+  }
+});
+
+// ── Google OAuth ──
+authGoogleBtn.addEventListener('click', async () => {
+  authGoogleBtn.disabled = true;
+  authGoogleBtn.style.opacity = '0.7';
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: APP_URL }
+  });
+  if (error) {
+    showAuthError('Error al conectar con Google. Intenta de nuevo.');
+    authGoogleBtn.disabled = false;
+    authGoogleBtn.style.opacity = '1';
+  }
+});
+
+// ── Login con email ──
+authLoginBtn.addEventListener('click', async () => {
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) { showAuthError('Completa todos los campos.'); return; }
+
+  authLoginBtn.disabled = true;
+  authLoginBtn.textContent = 'Ingresando…';
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  authLoginBtn.disabled = false;
+  authLoginBtn.textContent = 'Iniciar sesión';
+
+  if (error) {
+    showAuthError('Correo o contraseña incorrectos.');
+  } else {
+    closeAuthModal();
+  }
+});
+
+// ── Registro con email ──
+authRegisterBtn.addEventListener('click', async () => {
+  const email    = document.getElementById('authRegEmail').value.trim();
+  const password = document.getElementById('authRegPassword').value;
+  if (!email || !password) { showAuthError('Completa todos los campos.'); return; }
+  if (password.length < 6) { showAuthError('La contraseña debe tener al menos 6 caracteres.'); return; }
+
+  authRegisterBtn.disabled = true;
+  authRegisterBtn.textContent = 'Creando cuenta…';
+  const { error } = await supabase.auth.signUp({ email, password });
+  authRegisterBtn.disabled = false;
+  authRegisterBtn.textContent = 'Crear cuenta';
+
+  if (error) {
+    showAuthError('No se pudo crear la cuenta: ' + error.message);
+  } else {
+    showAuthError('✅ Revisa tu correo para confirmar tu cuenta.');
+    authError.style.background = '#F0FDF4';
+    authError.style.borderColor = '#86EFAC';
+    authError.style.color = '#16A34A';
+  }
+});
+
+// ── Cerrar sesión ──
+menuLogoutBtn.addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  closeMenu();
+});
+
+// ── Abrir login desde el menú ──
+menuLoginBtn.addEventListener('click', () => {
+  closeMenu();
+  openAuthModal('Inicia sesión o crea tu cuenta');
+});
+
+// ── Switches entre login/register ──
+authSwitchToRegister.addEventListener('click', () => switchAuthForm('register'));
+authSwitchToLogin.addEventListener('click', () => switchAuthForm('login'));
+
+// ── Cerrar modal ──
+authCloseBtn.addEventListener('click', () => {
+  pendingAccount = null; // cancelar intención de compra
+  closeAuthModal();
+});
+authOverlay.addEventListener('click', (e) => {
+  if (e.target === authOverlay) {
+    pendingAccount = null;
+    closeAuthModal();
+  }
+});
 
 // ── ELEMENTS: HOME ──
 const viewHome        = document.getElementById('viewHome');
@@ -661,7 +845,20 @@ buyOverlay.addEventListener('click', () => {
   closeBuySheet(true);
 });
 btnBuyCancel.addEventListener('click', () => closeBuySheet(true));
-btnGoToPayment.addEventListener('click', () => showBuyStep(2));
+btnGoToPayment.addEventListener('click', async () => {
+  // Verificar sesión antes de continuar al pago
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    // Guardar la cuenta pendiente y pedir login
+    pendingAccount = currentAccount;
+    // Cerrar el sheet de resumen primero
+    buySheet.classList.remove('open');
+    buyOverlay.classList.remove('visible');
+    openAuthModal('Inicia sesión para continuar con tu compra');
+    return;
+  }
+  showBuyStep(2);
+});
 btnBackToSummary.addEventListener('click', () => {
   // Volver al paso 1 libera la reserva (equivale a cancelar)
   closeBuySheet(true);
@@ -919,6 +1116,7 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
     if (!voucherUrl) throw new Error('No se pudo obtener la URL del comprobante.');
 
     // 3. Crear la orden en la tabla orders
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
     const { error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -926,6 +1124,8 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
         amount:      parseFloat(currentAccount.price) || 0,
         voucher_url: voucherUrl,
         status:      'pendiente',
+        user_id:     currentSession?.user?.id || null,
+        user_email:  currentSession?.user?.email || null,
       });
 
     if (orderError) {
@@ -1015,7 +1215,16 @@ function closeMenu() {
   hamburgerBtn.classList.remove('is-open');
 }
 
-hamburgerBtn.addEventListener('click', () => menuOpen ? closeMenu() : openMenu());
+hamburgerBtn.addEventListener('click', async () => {
+  if (menuOpen) { closeMenu(); return; }
+  // Si no hay sesión, abrir modal de login en lugar del menú
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    openAuthModal('Inicia sesión o crea tu cuenta');
+    return;
+  }
+  openMenu();
+});
 menuOverlay.addEventListener('click', closeMenu);
 
 
@@ -1024,8 +1233,11 @@ menuOverlay.addEventListener('click', closeMenu);
 ════════════════════════════════════ */
 loadProducts(currentTab);
 
-// Recuperar reserva activa si el usuario refrescó la página
-tryRecoverReservation();
+// Recuperar sesión activa y reserva pendiente
+supabase.auth.getSession().then(({ data: { session } }) => {
+  updateMenuAuth(session?.user || null);
+  tryRecoverReservation();
+});
 
 setTimeout(() => {
   if (productsLoading.style.display !== 'none') {
