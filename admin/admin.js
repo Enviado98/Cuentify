@@ -437,18 +437,24 @@ async function loadOrders(status) {
   }[s] || s);
 
   const orderActions = o => o.status !== 'pendiente' ? '' : `
-    <button class="btn-icon" style="color:var(--green)" data-action="approve-order" data-id="${o.id}" data-account="${o.account_id}" title="Aprobar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <button class="btn-approve" data-action="approve-order" data-id="${o.id}" data-account="${o.account_id}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+      Aprobar
     </button>
-    <button class="btn-icon danger" data-action="reject-order" data-id="${o.id}" title="Rechazar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <button class="btn-reject" data-action="reject-order" data-id="${o.id}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Rechazar
     </button>`;
 
-  const voucherBtn = o => o.voucher_url
-    ? `<button class="btn-icon" data-action="view-voucher" data-id="${o.id}" data-url="${o.voucher_url}" title="Ver">
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  const voucherThumb = o => o.voucher_url
+    ? `<button class="voucher-thumb-btn" data-action="view-voucher" data-id="${o.id}" data-url="${o.voucher_url}" title="Ver comprobante">
+         <img class="voucher-thumb" src="${o.voucher_url}" alt="Comprobante" loading="lazy" />
+         <span class="voucher-thumb-overlay">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+           Ver
+         </span>
        </button>`
-    : '<span style="font-size:0.78rem;color:var(--muted)">Sin archivo</span>';
+    : '<span class="voucher-empty">Sin comprobante</span>';
 
   // Tabla
   const tbody = document.getElementById('ordersBody');
@@ -457,48 +463,32 @@ async function loadOrders(status) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${fmtDate(o.created_at)}</td>
-      <td>${o.customer_email || '—'}</td>
+      <td>${o.customer_email || '<span style="color:var(--muted)">—</span>'}</td>
       <td>${o.accounts?.products?.name || '—'}</td>
-      <td>$${parseFloat(o.amount||0).toFixed(2)}</td>
-      <td>${voucherBtn(o)}</td>
+      <td><strong>$${parseFloat(o.amount||0).toFixed(2)}</strong> <span style="font-size:0.72rem;color:var(--muted)">MXN</span></td>
+      <td>${voucherThumb(o)}</td>
       <td>${statusBadge(o.status)}</td>
-      <td><div style="display:flex;gap:2px;">${orderActions(o)}</div></td>`;
+      <td><div class="order-action-row">${orderActions(o)}</div></td>`;
     tbody.appendChild(tr);
   });
 
-  // Cards
+  // Cards (móvil)
   const cardsContainer = document.getElementById('ordersCards');
   cardsContainer.innerHTML = '';
   data.forEach(o => {
     const div = document.createElement('div');
-    div.className = 'data-card';
+    div.className = 'data-card order-card';
     div.innerHTML = `
-      <div class="data-card-header">
-        <div class="data-card-title"><span>${o.customer_email || '—'}</span></div>
-        <div class="data-card-actions"><div style="display:flex;gap:2px;">${orderActions(o)}</div></div>
+      <div class="order-card-top">
+        ${voucherThumb(o)}
+        <div class="order-card-info">
+          <div class="order-card-product">${o.accounts?.products?.name || '—'}</div>
+          <div class="order-card-amount">$${parseFloat(o.amount||0).toFixed(2)} <span>MXN</span></div>
+          <div class="order-card-date">${fmtDate(o.created_at)}</div>
+          ${statusBadge(o.status)}
+        </div>
       </div>
-      <div class="data-card-fields">
-        <div class="data-card-field">
-          <span class="data-card-field-label">Producto</span>
-          <span class="data-card-field-value">${o.accounts?.products?.name || '—'}</span>
-        </div>
-        <div class="data-card-field">
-          <span class="data-card-field-label">Monto</span>
-          <span class="data-card-field-value">$${parseFloat(o.amount||0).toFixed(2)} MXN</span>
-        </div>
-        <div class="data-card-field">
-          <span class="data-card-field-label">Fecha</span>
-          <span class="data-card-field-value">${fmtDate(o.created_at)}</span>
-        </div>
-        <div class="data-card-field">
-          <span class="data-card-field-label">Estado</span>
-          <span class="data-card-field-value">${statusBadge(o.status)}</span>
-        </div>
-        <div class="data-card-field" style="grid-column:1/-1">
-          <span class="data-card-field-label">Comprobante</span>
-          <span class="data-card-field-value">${voucherBtn(o)}</span>
-        </div>
-      </div>`;
+      ${o.status === 'pendiente' ? `<div class="order-card-actions">${orderActions(o)}</div>` : ''}`;
     cardsContainer.appendChild(div);
   });
 
