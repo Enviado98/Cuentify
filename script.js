@@ -215,8 +215,6 @@ const navbar          = document.querySelector('#viewHome .navbar');
 const hamburgerBtn    = document.getElementById('hamburgerBtn');
 const menuSheet       = document.getElementById('menuSheet');
 const menuOverlay     = document.getElementById('menuOverlay');
-const productsGrid    = document.getElementById('productsGrid');
-const productsEmpty   = document.getElementById('productsEmpty');
 const productsLoading = document.getElementById('productsLoading');
 
 // ── ELEMENTS: DETAIL ──
@@ -247,29 +245,28 @@ const btnBackToSummary = document.getElementById('btnBackToSummary');
 
 
 /* ════════════════════════════════════
-   TAB NAVIGATION
+   TAB NAVIGATION (solo Internet)
 ════════════════════════════════════ */
 document.querySelectorAll('.tab-item').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentTab = tab.dataset.tab;
-    loadProducts(currentTab);
+    switchTab(currentTab);
   });
 });
 
-document.querySelectorAll('.menu-nav-item').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const tab = link.dataset.tab;
-    document.querySelectorAll('.tab-item').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
-    });
-    currentTab = tab;
-    closeMenu();
-    loadProducts(tab);
-  });
-});
+function switchTab(tab) {
+  const categorySections = document.getElementById('categorySections');
+  const internetSection  = document.getElementById('internetSection');
+  if (tab === 'internet') {
+    categorySections.style.display = 'none';
+    internetSection.style.display  = 'block';
+  } else {
+    categorySections.style.display = 'block';
+    internetSection.style.display  = 'none';
+  }
+}
 
 
 /* ════════════════════════════════════
@@ -327,21 +324,77 @@ async function loadTrends() {
 }
 
 
-async function loadProducts(category) {
-  productsGrid.innerHTML = '';
-  productsEmpty.style.display = 'none';
+/* Carga todas las categorías en secciones verticales */
+async function loadAllCategories() {
+  const categories = ['streaming', 'musica', 'gaming', 'software'];
+  productsLoading.style.display = 'flex';
+
+  // Traer todos los productos de una vez
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .in('category', categories)
+    .order('created_at', { ascending: false });
+
+  productsLoading.style.display = 'none';
+
+  if (error || !data || data.length === 0) return;
+
+  // Contar cuentas disponibles
+  const productIds = data.map(p => p.id);
+  const now = new Date().toISOString();
+  const { data: countData } = await supabase
+    .from('accounts')
+    .select('product_id')
+    .in('product_id', productIds)
+    .eq('is_available', true)
+    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`);
+
+  const countMap = {};
+  (countData || []).forEach(row => {
+    countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
+  });
+
+  // Renderizar por sección
+  categories.forEach(cat => {
+    const grid  = document.getElementById(`grid-${cat}`);
+    const empty = document.getElementById(`empty-${cat}`);
+    const section = document.getElementById(`section-${cat}`);
+    const catProducts = data.filter(p => p.category === cat);
+
+    if (!catProducts.length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    catProducts.forEach(product => {
+      product._accountsCount = countMap[product.id] || 0;
+      grid.appendChild(buildCard(product));
+    });
+  });
+}
+
+/* Carga solo la categoría Internet (tab aparte) */
+async function loadInternetProducts() {
+  const grid  = document.getElementById('grid-internet');
+  const empty = document.getElementById('empty-internet');
+  const section = document.getElementById('internetSection');
+
+  grid.innerHTML = '';
+  empty.style.display = 'none';
+  section.style.display = 'block';
   productsLoading.style.display = 'flex';
 
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('category', category)
+    .eq('category', 'internet')
     .order('created_at', { ascending: false });
 
   productsLoading.style.display = 'none';
 
   if (error || !data || data.length === 0) {
-    productsEmpty.style.display = 'block';
+    empty.style.display = 'block';
     return;
   }
 
@@ -361,8 +414,13 @@ async function loadProducts(category) {
 
   data.forEach(product => {
     product._accountsCount = countMap[product.id] || 0;
-    productsGrid.appendChild(buildCard(product));
+    grid.appendChild(buildCard(product));
   });
+}
+
+/* Alias para compatibilidad con loadTrends click handler */
+function loadProducts(category) {
+  if (category === 'internet') loadInternetProducts();
 }
 
 function buildCard(product) {
@@ -1286,7 +1344,8 @@ menuOverlay.addEventListener('click', closeMenu);
 /* ════════════════════════════════════
    INIT
 ════════════════════════════════════ */
-loadProducts(currentTab);
+switchTab("digital");
+loadAllCategories();
 loadTrends();
 
 // Recuperar sesión activa y reserva pendiente
@@ -1298,7 +1357,6 @@ supabase.auth.getSession().then(({ data: { session } }) => {
 setTimeout(() => {
   if (productsLoading.style.display !== 'none') {
     productsLoading.style.display = 'none';
-    productsEmpty.style.display = 'block';
   }
 }, 8000);
 

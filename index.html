@@ -23,11 +23,8 @@
 
     <nav class="tabs">
       <ul class="tabs-list">
-        <li class="tab-item active" data-tab="streaming">Streaming</li>
-        <li class="tab-item" data-tab="musica">Música</li>
-        <li class="tab-item" data-tab="gaming">Gaming</li>
-        <li class="tab-item" data-tab="software">Software</li>
-        <li class="tab-item" data-tab="internet">Internet</li>
+        <li class="tab-item active" data-tab="digital">Cuentas Digitales</li>
+        <li class="tab-item" data-tab="internet">Internet Free</li>
       </ul>
     </nav>
 
@@ -42,10 +39,38 @@
         <div class="trends-scroll" id="trendsScroll"></div>
       </section>
 
-      <div class="products-grid" id="productsGrid"></div>
-      <div class="products-empty" id="productsEmpty" style="display:none;">
-        <p>No hay productos en esta categoría aún.</p>
+      <!-- ── SECCIONES POR CATEGORÍA ── -->
+      <div id="categorySections">
+        <div class="category-section" id="section-streaming">
+          <h2 class="category-section-title">Streaming</h2>
+          <div class="products-grid" id="grid-streaming"></div>
+          <div class="products-empty" id="empty-streaming" style="display:none;"><p>No hay productos aún.</p></div>
+        </div>
+        <div class="category-section" id="section-musica">
+          <h2 class="category-section-title">Música</h2>
+          <div class="products-grid" id="grid-musica"></div>
+          <div class="products-empty" id="empty-musica" style="display:none;"><p>No hay productos aún.</p></div>
+        </div>
+        <div class="category-section" id="section-gaming">
+          <h2 class="category-section-title">Gaming</h2>
+          <div class="products-grid" id="grid-gaming"></div>
+          <div class="products-empty" id="empty-gaming" style="display:none;"><p>No hay productos aún.</p></div>
+        </div>
+        <div class="category-section" id="section-software">
+          <h2 class="category-section-title">Software</h2>
+          <div class="products-grid" id="grid-software"></div>
+          <div class="products-empty" id="empty-software" style="display:none;"><p>No hay productos aún.</p></div>
+        </div>
       </div>
+
+      <!-- Internet Free -->
+      <div id="internetSection" style="display:none;">
+        <div class="under-construction">
+          <span>🚧</span>
+          <p>Sección en construcción</p>
+        </div>
+      </div>
+
       <div class="products-loading" id="productsLoading">
         <div class="spinner"></div>
       </div>
