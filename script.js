@@ -294,11 +294,13 @@ async function loadProducts(category) {
   }
 
   const productIds = data.map(p => p.id);
+  const now = new Date().toISOString();
   const { data: countData } = await supabase
     .from('accounts')
     .select('product_id')
     .in('product_id', productIds)
-    .eq('is_available', true);
+    .eq('is_available', true)
+    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`);
 
   const countMap = {};
   (countData || []).forEach(row => {
