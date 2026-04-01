@@ -590,21 +590,37 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
   sendBtn.querySelector('span').textContent = 'Enviando…';
 
   try {
-    // 1. Subir comprobante a Supabase Storage
+    // 1. Convertir a Blob JPEG limpio (garantiza tipo correcto independientemente del fallback)
+    let uploadBlob = compressedBlob;
+    if (!(uploadBlob instanceof Blob) || uploadBlob.type !== 'image/jpeg') {
+      uploadBlob = new Blob([uploadBlob], { type: 'image/jpeg' });
+    }
+
+    // 2. Subir comprobante a Supabase Storage
     const fileName = `comprobantes/${Date.now()}_${Math.random().toString(36).substring(2,7)}.jpg`;
-    const { error: uploadError } = await supabase
+    const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('vouchers')
-      .upload(fileName, compressedBlob, { contentType: 'image/jpeg', upsert: false });
+      .upload(fileName, uploadBlob, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Storage error:', uploadError);
+      throw new Error('No se pudo subir el comprobante. Verifica que el bucket "vouchers" existe en Supabase Storage y es público.');
+    }
 
-    const voucherUrl = supabase
+    const { data: urlData } = supabase
       .storage
       .from('vouchers')
-      .getPublicUrl(fileName).data.publicUrl;
+      .getPublicUrl(fileName);
 
-    // 2. Crear la orden en la tabla orders
+    const voucherUrl = urlData?.publicUrl;
+    if (!voucherUrl) throw new Error('No se pudo obtener la URL del comprobante.');
+
+    // 3. Crear la orden en la tabla orders
     const { error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -614,17 +630,20 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
         status:      'pendiente',
       });
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      console.error('Orders insert error:', orderError);
+      throw new Error('No se pudo registrar el pedido: ' + orderError.message);
+    }
 
-    // 3. Éxito
+    // 4. Éxito
     closeBuySheet();
     showSuccessToast();
   } catch (err) {
     console.error('Error al enviar comprobante:', err);
     const sub = document.getElementById('transferUploadSub');
-    if (sub) sub.textContent = 'Error al enviar. Inténtalo de nuevo.';
+    if (sub) sub.textContent = err.message || 'Error al enviar. Inténtalo de nuevo.';
     transferUploadArea.style.borderColor = '#EF4444';
-    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 1200);
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 2000);
   } finally {
     sendBtn.disabled = false;
     sendBtn.querySelector('span').textContent = 'Enviar comprobante';
