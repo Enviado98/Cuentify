@@ -395,7 +395,7 @@ async function loadAccounts(productId, product) {
     .select('*')
     .eq('product_id', productId)
     .eq('is_available', true)
-    .or(`reserved.eq.false,reserved_until.lt.${now}`)
+    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`)
     .order('expires_at', { ascending: true });
 
   accountsLoading.style.display = 'none';
@@ -753,12 +753,13 @@ async function showBuyStep(n) {
     const deadline  = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
     // UPDATE condicional: solo actualiza si la cuenta NO está reservada por otro
+    // Cubre 3 casos: reserved=false, reserved_until IS NULL, o reserved_until ya expiró
     const { data: updated, error } = await supabase
       .from('accounts')
       .update({ reserved: true, reserved_until: deadline })
       .eq('id', currentAccount.id)
       .eq('is_available', true)
-      .or(`reserved.eq.false,reserved_until.lt.${now}`)
+      .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`)
       .select('id');
 
     if (error || !updated || updated.length === 0) {

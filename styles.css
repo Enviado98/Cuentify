@@ -643,6 +643,8 @@ body {
 .buy-sheet-body {
   padding: 16px 20px 40px;
   padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
 }
 
 .buy-sheet-handle {
@@ -1268,55 +1270,34 @@ body {
 ══════════════════════════════════ */
 
 .reserve-countdown {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  margin-bottom: 16px;
-  padding: 7px 14px;
-  background: #EFF6FF;
-  border: 1.5px solid #BFDBFE;
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #1E40AF;
-  transition: background 0.4s, border-color 0.4s, color 0.4s;
+  align-self: center;
+  margin: 0 auto 14px;
+  padding: 5px 14px;
+  background: #EF4444;
+  border: none;
+  border-radius: 999px;
+  width: fit-content;
 }
 
 .reserve-time {
   font-family: 'Courier New', Courier, monospace;
   font-weight: 900;
   font-size: 0.88rem;
-  color: #1D4ED8;
-  min-width: 36px;
-  text-align: center;
-  transition: color 0.4s;
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 
-/* Menos de 10 minutos — advertencia naranja */
-.reserve-countdown.warning {
-  background: #FFFBEB;
-  border-color: #FDE68A;
-  color: #92400E;
-}
-.reserve-countdown.warning .reserve-time {
-  color: #B45309;
-}
-
-/* Últimos 2 minutos — urgencia roja */
-.reserve-countdown.urgent {
-  background: #FEF2F2;
-  border-color: #FECACA;
-  color: #991B1B;
-}
+/* Últimos 2 minutos — parpadeo */
 .reserve-countdown.urgent .reserve-time {
-  color: #DC2626;
   animation: pulse 1s ease infinite;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
+  50%       { opacity: 0.45; }
 }
 
 /* Estado cargando en botón Continuar al pago */
