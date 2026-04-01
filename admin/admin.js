@@ -504,7 +504,7 @@ async function handleOrderAction(e) {
   const { action, id } = btn.dataset;
   if (action === 'approve-order') {
     const accountId = btn.dataset.account;
-    if (!confirm('¿Aprobar este pedido?')) return;
+    if (!confirm('¿Aprobar este pedido? La cuenta será eliminada del sistema.')) return;
 
     // 1. Marcar orden como aprobada
     const { error: orderErr } = await sb.from('orders').update({ status: 'aprobado' }).eq('id', id);
@@ -517,21 +517,41 @@ async function handleOrderAction(e) {
       accId = ord?.account_id;
     }
 
-    // 3. Marcar cuenta como no disponible
+    // 3. Eliminar la cuenta del sistema (ya fue vendida)
     if (accId) {
-      const { error: accErr } = await sb.from('accounts').update({ is_available: false }).eq('id', accId);
-      if (accErr) toast('Orden aprobada pero no se pudo marcar la cuenta como vendida', 'error');
+      const { error: accErr } = await sb.from('accounts').delete().eq('id', accId);
+      if (accErr) toast('Orden aprobada pero no se pudo eliminar la cuenta', 'error');
     } else {
       toast('Advertencia: no se encontró la cuenta asociada', 'error');
     }
 
-    toast('Pedido aprobado ✓', 'success');
+    toast('Pedido aprobado ✓ — cuenta eliminada', 'success');
     loadOrders(currentOrderStatus);
   }
   if (action === 'reject-order') {
-    if (!confirm('¿Rechazar este pedido?')) return;
-    await sb.from('orders').update({ status: 'rechazado' }).eq('id', id);
-    toast('Pedido rechazado');
+    if (!confirm('¿Rechazar este pedido? La cuenta volverá a estar disponible.')) return;
+
+    // 1. Marcar orden como rechazada
+    const { error: orderErr } = await sb.from('orders').update({ status: 'rechazado' }).eq('id', id);
+    if (orderErr) { toast('Error al rechazar', 'error'); return; }
+
+    // 2. Obtener account_id para liberar la reserva
+    let accId = btn.dataset.account;
+    if (!accId) {
+      const { data: ord } = await sb.from('orders').select('account_id').eq('id', id).single();
+      accId = ord?.account_id;
+    }
+
+    // 3. Liberar reserva y volver a poner disponible
+    if (accId) {
+      await sb.from('accounts').update({
+        is_available:   true,
+        reserved:       false,
+        reserved_until: null,
+      }).eq('id', accId);
+    }
+
+    toast('Pedido rechazado — cuenta disponible de nuevo');
     loadOrders(currentOrderStatus);
   }
   if (action === 'view-voucher') {
