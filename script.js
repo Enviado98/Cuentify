@@ -204,10 +204,14 @@ async function loadAccounts(productId, product) {
   accountsEmpty.style.display = 'none';
   accountsLoading.style.display = 'flex';
 
+  // Excluir cuentas no disponibles y las reservadas activamente por otro usuario
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('accounts')
     .select('*')
     .eq('product_id', productId)
+    .eq('is_available', true)
+    .or(`reserved.eq.false,reserved_until.lt.${now}`)
     .order('expires_at', { ascending: true });
 
   accountsLoading.style.display = 'none';
@@ -295,6 +299,10 @@ function calcPrice(item) {
 /* ════════════════════════════════════
    BUY SHEET — 2 pasos
 ════════════════════════════════════ */
+// ── Timer de reserva ──
+let reserveTimer    = null;  // setInterval del countdown
+let reserveDeadline = null;  // Date cuando expira la reserva
+
 function openBuySheet(account, priceDisplay) {
   currentAccount = account;
 
@@ -318,31 +326,290 @@ function openBuySheet(account, priceDisplay) {
   const transferNote = document.getElementById('transferAmountNote');
   if (transferNote) transferNote.textContent = totalFmt + ' MXN';
 
-  // Generar código de referencia único para esta compra
-  const refCode = 'CNT-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-  const refEl = document.getElementById('transferRefCode');
-  if (refEl) refEl.textContent = refCode;
-
   switchPayMethod('card');
-
   resetPayForm();
   buySheet.classList.add('open');
   buyOverlay.classList.add('visible');
 }
 
-function closeBuySheet() {
+async function closeBuySheet(releaseReserve = true) {
+  // Si el usuario cierra sin completar el pago, liberar la reserva
+  if (releaseReserve && currentAccount) {
+    await supabase
+      .from('accounts')
+      .update({ reserved: false, reserved_until: null })
+      .eq('id', currentAccount.id);
+  }
+  clearReserveTimer();
+  disableNavigationBlock();
   buySheet.classList.remove('open');
   buySheetPay.classList.remove('open');
   buyOverlay.classList.remove('visible');
   currentAccount = null;
 }
 
-function showBuyStep(n) {
+function clearReserveTimer() {
+  if (reserveTimer) { clearInterval(reserveTimer); reserveTimer = null; }
+  reserveDeadline = null;
+  sessionStorage.removeItem('reserveDeadline');
+  sessionStorage.removeItem('reserveAccountId');
+  sessionStorage.removeItem('reserveAccountData');
+  const el = document.getElementById('reserveCountdown');
+  if (el) el.style.display = 'none';
+}
+
+function startReserveTimer() {
+  clearReserveTimer();
+  const MINUTES = 30;
+  reserveDeadline = new Date(Date.now() + MINUTES * 60 * 1000);
+  // Guardar en sessionStorage para recuperar si el usuario refresca
+  sessionStorage.setItem('reserveDeadline', reserveDeadline.toISOString());
+  sessionStorage.setItem('reserveAccountId', currentAccount.id);
+  sessionStorage.setItem('reserveAccountData', JSON.stringify(currentAccount));
+
+  const el = document.getElementById('reserveCountdown');
+  if (el) el.style.display = 'flex';
+
+  reserveTimer = setInterval(() => {
+    const remaining = reserveDeadline - Date.now();
+    if (remaining <= 0) {
+      clearReserveTimer();
+      disableNavigationBlock();
+      closeBuySheet(false);
+      showExpiredToast();
+      return;
+    }
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    const txt = `${m}:${s.toString().padStart(2,'0')}`;
+    if (el) {
+      el.querySelector('.reserve-time').textContent = txt;
+      // Urgencia visual en 3 niveles
+      el.classList.remove('urgent', 'warning');
+      if (remaining < 2 * 60 * 1000) {
+        el.classList.add('urgent');   // rojo + parpadeo
+      } else if (remaining < 10 * 60 * 1000) {
+        el.classList.add('warning'); // amarillo/naranja
+      }
+    }
+  }, 1000);
+}
+
+function showExpiredToast() {
+  const toast = document.createElement('div');
+  toast.className = 'success-toast';
+  toast.style.background = '#EF4444';
+  toast.innerHTML = '<iconify-icon icon="lucide:clock" width="18"></iconify-icon><span>Tu reserva expiró. La cuenta volvió a estar disponible.</span>';
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+}
+
+/* ── Bloqueo de navegación durante el pago ── */
+let navigationBlocked = false;
+
+function enableNavigationBlock() {
+  if (navigationBlocked) return;
+  navigationBlocked = true;
+
+  // Bloquear cierre/recarga de pestaña
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+  // Bloquear botón atrás del navegador — empujamos un estado al historial
+  // para que el "atrás" vuelva aquí en lugar de salir
+  history.pushState({ paymentLocked: true }, '');
+  window.addEventListener('popstate', handlePopState);
+}
+
+function disableNavigationBlock() {
+  if (!navigationBlocked) return;
+  navigationBlocked = false;
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  window.removeEventListener('popstate', handlePopState);
+}
+
+function handleBeforeUnload(e) {
+  e.preventDefault();
+  e.returnValue = '¿Seguro que quieres salir? Tu reserva se cancelará.';
+  return e.returnValue;
+}
+
+function handlePopState(e) {
+  // El usuario tocó "atrás" — volvemos a empujar el estado para mantenerlo aquí
+  if (navigationBlocked) {
+    history.pushState({ paymentLocked: true }, '');
+    // Mostrar un toast recordatorio
+    showStayToast();
+  }
+}
+
+function showStayToast() {
+  // Evitar múltiples toasts apilados
+  if (document.querySelector('.stay-toast')) return;
+  const toast = document.createElement('div');
+  toast.className = 'success-toast stay-toast';
+  toast.style.background = '#F59E0B';
+  toast.innerHTML = '<iconify-icon icon="lucide:lock" width="18"></iconify-icon><span>Completa el pago o toca "Cancelar Compra" para salir.</span>';
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
+}
+
+/* ── Recuperar reserva activa si el usuario refrescó la página ── */
+async function tryRecoverReservation() {
+  const savedDeadline   = sessionStorage.getItem('reserveDeadline');
+  const savedAccountId  = sessionStorage.getItem('reserveAccountId');
+  const savedAccountRaw = sessionStorage.getItem('reserveAccountData');
+
+  if (!savedDeadline || !savedAccountId || !savedAccountRaw) return;
+
+  const deadline = new Date(savedDeadline);
+  const remaining = deadline - Date.now();
+
+  // Si ya expiró, limpiar y liberar en BD
+  if (remaining <= 0) {
+    sessionStorage.removeItem('reserveDeadline');
+    sessionStorage.removeItem('reserveAccountId');
+    sessionStorage.removeItem('reserveAccountData');
+    await supabase
+      .from('accounts')
+      .update({ reserved: false, reserved_until: null })
+      .eq('id', savedAccountId);
+    return;
+  }
+
+  // Reserva aún vigente — restaurar estado y mostrar el sheet de pago
+  try {
+    const savedAccount = JSON.parse(savedAccountRaw);
+    currentAccount  = savedAccount;
+    reserveDeadline = deadline;
+
+    const price    = parseFloat(savedAccount.price) || 0;
+    const totalFmt = `$${price.toFixed(2)}`;
+
+    // Obtener producto para mostrar datos del sheet
+    const { data: productData } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', savedAccount.product_id)
+      .single();
+
+    if (productData) {
+      currentProduct = productData;
+      buySheetTitle.textContent = productData.name;
+      savedAccount._productImageUrl = productData.image_url;
+
+      buyThumb.innerHTML = '';
+      if (productData.image_url) {
+        const img = document.createElement('img');
+        img.src = productData.image_url;
+        buyThumb.appendChild(img);
+      }
+    }
+
+    buySheetDesc.textContent  = savedAccount.description || 'Cuenta disponible';
+    buySheetPrice.textContent = totalFmt;
+    buyHeaderTotal.textContent = totalFmt;
+    btnPayAmount.textContent   = totalFmt;
+    const transferNote = document.getElementById('transferAmountNote');
+    if (transferNote) transferNote.textContent = totalFmt + ' MXN';
+
+    switchPayMethod('card');
+    resetPayForm();
+
+    // Abrir sheet directo en paso 2 (pago)
+    buySheet.classList.add('open');
+    buyOverlay.classList.add('visible');
+    buySheetPay.classList.add('open');
+
+    // Reanudar el countdown con el tiempo restante
+    const el = document.getElementById('reserveCountdown');
+    if (el) el.style.display = 'flex';
+
+    reserveTimer = setInterval(() => {
+      const rem = reserveDeadline - Date.now();
+      if (rem <= 0) {
+        clearReserveTimer();
+        disableNavigationBlock();
+        closeBuySheet(false);
+        showExpiredToast();
+        return;
+      }
+      const m = Math.floor(rem / 60000);
+      const s = Math.floor((rem % 60000) / 1000);
+      if (el) {
+        el.querySelector('.reserve-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        el.classList.remove('urgent', 'warning');
+        if (rem < 2 * 60 * 1000)        el.classList.add('urgent');
+        else if (rem < 10 * 60 * 1000)  el.classList.add('warning');
+      }
+    }, 1000);
+
+    enableNavigationBlock();
+
+    // Mostrar toast de bienvenida de vuelta
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.style.background = '#4F46E5';
+    toast.innerHTML = '<iconify-icon icon="lucide:lock" width="18"></iconify-icon><span>Tu reserva sigue activa. Completa el pago.</span>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+
+  } catch (err) {
+    console.error('Error al recuperar reserva:', err);
+    clearReserveTimer();
+  }
+}
+
+async function showBuyStep(n) {
   if (n === 2) {
+    // ── Intentar reservar la cuenta de forma atómica ──
+    const now       = new Date().toISOString();
+    const deadline  = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+    // UPDATE condicional: solo actualiza si la cuenta NO está reservada por otro
+    const { data: updated, error } = await supabase
+      .from('accounts')
+      .update({ reserved: true, reserved_until: deadline })
+      .eq('id', currentAccount.id)
+      .eq('is_available', true)
+      .or(`reserved.eq.false,reserved_until.lt.${now}`)
+      .select('id');
+
+    if (error || !updated || updated.length === 0) {
+      // Alguien más llegó primero — mostrar error y cerrar
+      showUnavailableError();
+      closeBuySheet(false);
+      return;
+    }
+
+    // Reserva exitosa — iniciar countdown, bloquear navegación y mostrar paso 2
+    startReserveTimer();
+    enableNavigationBlock();
     buySheetPay.classList.add('open');
   } else {
+    // Volver al paso 1 — liberar reserva
+    if (currentAccount) {
+      await supabase
+        .from('accounts')
+        .update({ reserved: false, reserved_until: null })
+        .eq('id', currentAccount.id);
+    }
+    clearReserveTimer();
+    disableNavigationBlock();
     buySheetPay.classList.remove('open');
   }
+}
+
+function showUnavailableError() {
+  const toast = document.createElement('div');
+  toast.className = 'success-toast';
+  toast.style.background = '#EF4444';
+  toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Esta cuenta ya fue reservada por otro usuario.</span>';
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
 }
 
 function resetPayForm() {
@@ -385,10 +652,24 @@ function resetPayForm() {
   showCompressStatus(false);
 }
 
-buyOverlay.addEventListener('click', closeBuySheet);
-btnBuyCancel.addEventListener('click', closeBuySheet);
+buyOverlay.addEventListener('click', () => {
+  // Si está en la pantalla de pago (paso 2), no dejar cerrar por overlay
+  if (buySheetPay.classList.contains('open')) {
+    showStayToast();
+    return;
+  }
+  closeBuySheet(true);
+});
+btnBuyCancel.addEventListener('click', () => closeBuySheet(true));
 btnGoToPayment.addEventListener('click', () => showBuyStep(2));
-btnBackToSummary.addEventListener('click', () => showBuyStep(1));
+btnBackToSummary.addEventListener('click', () => {
+  // Volver al paso 1 libera la reserva (equivale a cancelar)
+  closeBuySheet(true);
+});
+
+// Botones "Cancelar compra" dentro del paso 2
+document.getElementById('btnCancelPurchase')?.addEventListener('click', () => closeBuySheet(true));
+document.getElementById('btnCancelPurchaseCard')?.addEventListener('click', () => closeBuySheet(true));
 
 /* ── Método de pago ── */
 function switchPayMethod(method) {
@@ -590,6 +871,23 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
   sendBtn.querySelector('span').textContent = 'Enviando…';
 
   try {
+    // 0. Verificar que la reserva sigue vigente antes de subir
+    const now = new Date().toISOString();
+    const { data: accountCheck, error: checkError } = await supabase
+      .from('accounts')
+      .select('id, reserved, reserved_until')
+      .eq('id', currentAccount.id)
+      .single();
+
+    const reservaVigente = accountCheck &&
+      accountCheck.reserved === true &&
+      accountCheck.reserved_until &&
+      new Date(accountCheck.reserved_until) > new Date();
+
+    if (checkError || !reservaVigente) {
+      throw new Error('Tu reserva ya expiró. Esta cuenta no está disponible para ti.');
+    }
+
     // 1. Convertir a Blob JPEG limpio (garantiza tipo correcto independientemente del fallback)
     let uploadBlob = compressedBlob;
     if (!(uploadBlob instanceof Blob) || uploadBlob.type !== 'image/jpeg') {
@@ -635,8 +933,9 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
       throw new Error('No se pudo registrar el pedido: ' + orderError.message);
     }
 
-    // 4. Éxito
-    closeBuySheet();
+    // 4. Éxito — cerrar sin liberar reserva (el admin la elimina al aprobar)
+    disableNavigationBlock();
+    closeBuySheet(false);
     showSuccessToast();
   } catch (err) {
     console.error('Error al enviar comprobante:', err);
@@ -724,6 +1023,9 @@ menuOverlay.addEventListener('click', closeMenu);
    INIT
 ════════════════════════════════════ */
 loadProducts(currentTab);
+
+// Recuperar reserva activa si el usuario refrescó la página
+tryRecoverReservation();
 
 setTimeout(() => {
   if (productsLoading.style.display !== 'none') {
