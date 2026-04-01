@@ -1581,3 +1581,116 @@ body {
   transition: background 0.15s, color 0.15s;
 }
 .menu-logout-btn:hover { background: #FEE2E2; color: #DC2626; }
+
+
+/* ══════════════════════════════════
+   TENDENCIAS
+══════════════════════════════════ */
+
+.trends-section {
+  padding: 20px 16px 4px;
+}
+
+.trends-title {
+  font-family: var(--font-logo);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trends-title svg {
+  color: var(--blue);
+}
+
+.trends-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.trends-scroll::-webkit-scrollbar { display: none; }
+
+/* Tarjeta banner horizontal alargada */
+.trend-card {
+  position: relative;
+  flex: 0 0 260px;
+  height: 120px;
+  border-radius: 14px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.trend-card:active {
+  transform: scale(0.97);
+}
+
+.trend-card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.3s ease;
+}
+.trend-card:hover .trend-card-bg {
+  transform: scale(1.04);
+}
+
+.trend-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(0,0,0,0.55) 0%,
+    rgba(0,0,0,0.18) 60%,
+    rgba(0,0,0,0.05) 100%
+  );
+}
+
+.trend-card-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px 14px;
+  gap: 2px;
+}
+
+.trend-card-label {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.75);
+  line-height: 1;
+}
+
+.trend-card-name {
+  font-family: var(--font-logo);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* En pantallas medianas, las cards son un poco más anchas */
+@media (min-width: 480px) {
+  .trend-card {
+    flex: 0 0 300px;
+    height: 130px;
+  }
+}

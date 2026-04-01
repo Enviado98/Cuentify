@@ -273,8 +273,60 @@ document.querySelectorAll('.menu-nav-item').forEach(link => {
 
 
 /* ════════════════════════════════════
-   LOAD PRODUCTS
+   TENDENCIAS
 ════════════════════════════════════ */
+async function loadTrends() {
+  const section = document.getElementById('trendsSection');
+  const scroll  = document.getElementById('trendsScroll');
+
+  const { data, error } = await supabase
+    .from('trends')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  scroll.innerHTML = '';
+  data.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'trend-card';
+
+    const bgStyle = item.image_url
+      ? `style="background-image:url('${item.image_url}')"`
+      : `style="background:${item.bg_color || '#1e293b'}"`;
+
+    card.innerHTML = `
+      <div class="trend-card-bg" ${bgStyle}></div>
+      <div class="trend-card-overlay"></div>
+      <div class="trend-card-content">
+        <span class="trend-card-label">${item.label || ''}</span>
+        <span class="trend-card-name">${item.name}</span>
+      </div>
+    `;
+
+    if (item.link_tab) {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.tab-item').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === item.link_tab);
+        });
+        currentTab = item.link_tab;
+        loadProducts(currentTab);
+        loadTrends();
+      });
+      card.style.cursor = 'pointer';
+    }
+
+    scroll.appendChild(card);
+  });
+
+  section.style.display = 'block';
+}
+
+
 async function loadProducts(category) {
   productsGrid.innerHTML = '';
   productsEmpty.style.display = 'none';
@@ -1235,6 +1287,7 @@ menuOverlay.addEventListener('click', closeMenu);
    INIT
 ════════════════════════════════════ */
 loadProducts(currentTab);
+loadTrends();
 
 // Recuperar sesión activa y reserva pendiente
 supabase.auth.getSession().then(({ data: { session } }) => {
