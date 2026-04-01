@@ -505,8 +505,26 @@ async function handleOrderAction(e) {
   if (action === 'approve-order') {
     const accountId = btn.dataset.account;
     if (!confirm('¿Aprobar este pedido?')) return;
-    await sb.from('orders').update({ status: 'aprobado' }).eq('id', id);
-    await sb.from('accounts').update({ is_available: false }).eq('id', accountId);
+
+    // 1. Marcar orden como aprobada
+    const { error: orderErr } = await sb.from('orders').update({ status: 'aprobado' }).eq('id', id);
+    if (orderErr) { toast('Error al aprobar la orden', 'error'); return; }
+
+    // 2. Obtener account_id directo de la BD por si el dataset llegó vacío
+    let accId = accountId;
+    if (!accId) {
+      const { data: ord } = await sb.from('orders').select('account_id').eq('id', id).single();
+      accId = ord?.account_id;
+    }
+
+    // 3. Marcar cuenta como no disponible
+    if (accId) {
+      const { error: accErr } = await sb.from('accounts').update({ is_available: false }).eq('id', accId);
+      if (accErr) toast('Orden aprobada pero no se pudo marcar la cuenta como vendida', 'error');
+    } else {
+      toast('Advertencia: no se encontró la cuenta asociada', 'error');
+    }
+
     toast('Pedido aprobado ✓', 'success');
     loadOrders(currentOrderStatus);
   }
