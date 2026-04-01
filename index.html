@@ -285,19 +285,20 @@
           </div>
         </div>
 
-        <div class="transfer-ref-note">
-          <iconify-icon icon="lucide:tag" width="14"></iconify-icon>
-          <span>Concepto: <strong id="transferRefCode">—</strong> (escríbelo en la transferencia)</span>
-        </div>
-
         <div class="transfer-section-label">Comprobante de pago <span style="color:#EF4444;">*</span></div>
         <div class="transfer-upload-area" id="transferUploadArea">
-          <input type="file" id="transferFileInput" class="transfer-upload-input" accept="image/*,.pdf" />
+          <input type="file" id="transferFileInput" class="transfer-upload-input" accept="image/*" />
           <div class="transfer-upload-icon" id="transferUploadIcon">
             <iconify-icon icon="lucide:upload-cloud" width="22" style="color:#4F46E5;"></iconify-icon>
           </div>
           <div class="transfer-upload-title" id="transferUploadTitle">Adjuntar captura</div>
-          <div class="transfer-upload-sub" id="transferUploadSub">JPG, PNG o PDF · Máx. 5 MB</div>
+          <div class="transfer-upload-sub" id="transferUploadSub">JPG o PNG · Se optimiza automáticamente</div>
+        </div>
+        <div class="transfer-compress-status" id="transferCompressStatus" style="display:none;">
+          <div class="transfer-compress-bar-wrap">
+            <div class="transfer-compress-bar" id="transferCompressBar"></div>
+          </div>
+          <span class="transfer-compress-label" id="transferCompressLabel">Optimizando imagen…</span>
         </div>
 
         <button class="btn-buy-primary btn-transfer-send" id="btnTransferSend">

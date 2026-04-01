@@ -368,6 +368,7 @@ function resetPayForm() {
   if (cvb)  cvb.innerHTML    = '';
 
   // Reset upload transfer
+  compressedBlob = null;
   const area = document.getElementById('transferUploadArea');
   const fi   = document.getElementById('transferFileInput');
   if (fi)   fi.value = '';
@@ -379,8 +380,9 @@ function resetPayForm() {
     const sub   = document.getElementById('transferUploadSub');
     if (icon)  icon.innerHTML    = '<iconify-icon icon="lucide:upload-cloud" width="22" style="color:#4F46E5;"></iconify-icon>';
     if (title) title.textContent = 'Adjuntar captura';
-    if (sub)   sub.textContent   = 'JPG, PNG o PDF · Máx. 5 MB';
+    if (sub)   sub.textContent   = 'JPG o PNG · Se optimiza automáticamente';
   }
+  showCompressStatus(false);
 }
 
 buyOverlay.addEventListener('click', closeBuySheet);
@@ -464,30 +466,169 @@ document.getElementById('transferCopyBtn').addEventListener('click', function ()
   }, 2000);
 });
 
-/* ── Upload comprobante ── */
+/* ── Upload comprobante con compresión por Canvas ── */
 const transferFileInput  = document.getElementById('transferFileInput');
 const transferUploadArea = document.getElementById('transferUploadArea');
 
-transferUploadArea.addEventListener('click', () => transferFileInput.click());
-transferFileInput.addEventListener('change', function () {
-  if (!this.files || !this.files[0]) return;
-  const name = this.files[0].name;
-  transferUploadArea.classList.add('has-file');
-  document.getElementById('transferUploadIcon').innerHTML =
-    '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
-  document.getElementById('transferUploadTitle').textContent =
-    name.length > 28 ? name.substring(0, 25) + '…' : name;
-  document.getElementById('transferUploadSub').textContent = 'Comprobante adjuntado ✓';
-});
+// Blob comprimido listo para subir
+let compressedBlob = null;
 
-/* ── Enviar comprobante (sin lógica aún) ── */
-document.getElementById('btnTransferSend').addEventListener('click', () => {
-  if (!transferFileInput.files || !transferFileInput.files[0]) {
+// Muestra la barra de progreso simulada durante la compresión
+function showCompressStatus(visible) {
+  const el = document.getElementById('transferCompressStatus');
+  el.style.display = visible ? 'flex' : 'none';
+}
+
+function setCompressBar(pct, label) {
+  document.getElementById('transferCompressBar').style.width = pct + '%';
+  document.getElementById('transferCompressLabel').textContent = label;
+}
+
+// Comprime la imagen con Canvas manteniendo la máxima calidad visual posible
+// Estrategia: redimensiona a máx. 1600px en el lado mayor, JPEG quality 0.82
+// Resultado típico: captura de 4-8 MB → 150-400 KB, visualmente indistinguible
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const MAX_SIDE = 1600;
+    const QUALITY  = 0.82;
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        if (width >= height) { height = Math.round((height / width) * MAX_SIDE); width = MAX_SIDE; }
+        else                 { width  = Math.round((width / height) * MAX_SIDE); height = MAX_SIDE; }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('Canvas toBlob falló')); return; }
+        resolve(blob);
+      }, 'image/jpeg', QUALITY);
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+    img.src = url;
+  });
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+transferFileInput.addEventListener('change', async function () {
+  if (!this.files || !this.files[0]) return;
+  const file = this.files[0];
+  compressedBlob = null;
+
+  // Solo imágenes
+  if (!file.type.startsWith('image/')) {
     transferUploadArea.style.borderColor = '#EF4444';
     setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
     return;
   }
-  // TODO: Subir comprobante a Supabase y crear pedido pendiente
+
+  // Muestra estado de compresión
+  showCompressStatus(true);
+  setCompressBar(20, 'Leyendo imagen…');
+
+  try {
+    setCompressBar(50, 'Optimizando calidad…');
+    const blob = await compressImage(file);
+    setCompressBar(90, 'Finalizando…');
+
+    compressedBlob = blob;
+
+    await new Promise(r => setTimeout(r, 180)); // pequeña pausa visual
+    setCompressBar(100, `✓ ${fmtSize(file.size)} → ${fmtSize(blob.size)}`);
+
+    await new Promise(r => setTimeout(r, 900));
+    showCompressStatus(false);
+
+    // Marca el área como lista
+    transferUploadArea.classList.add('has-file');
+    document.getElementById('transferUploadIcon').innerHTML =
+      '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
+    const name = file.name;
+    document.getElementById('transferUploadTitle').textContent =
+      name.length > 28 ? name.substring(0, 25) + '…' : name;
+    document.getElementById('transferUploadSub').textContent =
+      `Optimizado · ${fmtSize(blob.size)}`;
+  } catch (err) {
+    showCompressStatus(false);
+    console.error('Compresión fallida:', err);
+    // Fallback: usar archivo original
+    compressedBlob = file;
+    transferUploadArea.classList.add('has-file');
+    document.getElementById('transferUploadIcon').innerHTML =
+      '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
+    document.getElementById('transferUploadTitle').textContent = file.name.length > 28 ? file.name.substring(0, 25) + '…' : file.name;
+    document.getElementById('transferUploadSub').textContent = 'Comprobante adjuntado ✓';
+  }
+});
+
+/* ── Enviar comprobante ── */
+document.getElementById('btnTransferSend').addEventListener('click', async () => {
+  if (!compressedBlob) {
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
+    return;
+  }
+  const sendBtn = document.getElementById('btnTransferSend');
+  sendBtn.disabled = true;
+  sendBtn.querySelector('span').textContent = 'Enviando…';
+
+  try {
+    // 1. Subir comprobante a Supabase Storage
+    const fileName = `comprobantes/${Date.now()}_${Math.random().toString(36).substring(2,7)}.jpg`;
+    const { error: uploadError } = await supabase
+      .storage
+      .from('vouchers')
+      .upload(fileName, compressedBlob, { contentType: 'image/jpeg', upsert: false });
+
+    if (uploadError) throw uploadError;
+
+    const voucherUrl = supabase
+      .storage
+      .from('vouchers')
+      .getPublicUrl(fileName).data.publicUrl;
+
+    // 2. Crear la orden en la tabla orders
+    const { error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        account_id:  currentAccount.id,
+        amount:      parseFloat(currentAccount.price) || 0,
+        voucher_url: voucherUrl,
+        status:      'pendiente',
+      });
+
+    if (orderError) throw orderError;
+
+    // 3. Éxito
+    closeBuySheet();
+    showSuccessToast();
+  } catch (err) {
+    console.error('Error al enviar comprobante:', err);
+    const sub = document.getElementById('transferUploadSub');
+    if (sub) sub.textContent = 'Error al enviar. Inténtalo de nuevo.';
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 1200);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.querySelector('span').textContent = 'Enviar comprobante';
+  }
 });
 
 /* ── Pagar con tarjeta ── */

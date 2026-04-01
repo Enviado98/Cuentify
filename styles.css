@@ -1126,29 +1126,6 @@ body {
 }
 .transfer-amount-note-text strong { color: #78350F; }
 
-.transfer-ref-note {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: #F8F9FB;
-  border: 1.5px solid #E5E7EB;
-  border-radius: 10px;
-  padding: 10px 13px;
-  margin-bottom: 14px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.transfer-ref-note strong {
-  color: var(--text-dark);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-.transfer-ref-note iconify-icon {
-  flex-shrink: 0;
-  color: var(--blue);
-}
-
 .transfer-section-label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1246,4 +1223,42 @@ body {
 #panelCard.entering,
 #panelTransfer.entering {
   animation-name: panelIn;
+}
+
+/* ══════════════════════════════════
+   COMPRESS STATUS BAR
+══════════════════════════════════ */
+
+.transfer-compress-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: #F0F9FF;
+  border: 1.5px solid #BAE6FD;
+  border-radius: 10px;
+}
+
+.transfer-compress-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: #E0F2FE;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.transfer-compress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2563EB, #38bdf8);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.transfer-compress-label {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: #0369A1;
 }
