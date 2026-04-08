@@ -262,84 +262,23 @@
         </div>
       </div>
 
-      <!-- ══ PANEL TARJETA ══ -->
+      <!-- ══ PANEL STRIPE CHECKOUT ══ -->
       <div id="panelCard">
-        <div class="pay-brands">
-          <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
-          <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
-          <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
-        </div>
 
-        <div class="card-visual-wrap">
-          <div class="card-visual" id="cardVisual">
-            <div class="card-visual-top">
-              <div class="card-visual-chip">
-                <div class="chip-line"></div><div class="chip-line"></div><div class="chip-line"></div>
-              </div>
-              <iconify-icon icon="lucide:wifi" width="20" class="card-visual-nfc"></iconify-icon>
-            </div>
-            <div class="card-visual-number" id="cardVisualNumber">•••• •••• •••• ••••</div>
-            <div class="card-visual-bottom">
-              <div class="card-visual-holder">
-                <div class="card-visual-sub">Titular</div>
-                <div class="card-visual-val" id="cardVisualName">NOMBRE COMPLETO</div>
-              </div>
-              <div class="card-visual-expiry">
-                <div class="card-visual-sub">Vence</div>
-                <div class="card-visual-val" id="cardVisualExpiry">MM / AA</div>
-              </div>
-              <div class="card-visual-brand" id="cardVisualBrand"></div>
-            </div>
+        <div class="stripe-checkout-info">
+          <div class="stripe-checkout-brands">
+            <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
+            <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
+            <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
           </div>
-        </div>
-
-        <div class="pay-form">
-          <div class="pay-field-group">
-            <label class="pay-label">Número de tarjeta</label>
-            <div class="pay-input-wrap">
-              <iconify-icon icon="lucide:credit-card" width="17" class="pay-input-icon"></iconify-icon>
-              <input class="pay-input" id="cardNumber" type="text"
-                inputmode="numeric" maxlength="19"
-                placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
-            </div>
-          </div>
-
-          <div class="pay-row">
-            <div class="pay-field-group">
-              <label class="pay-label">Vencimiento</label>
-              <div class="pay-input-wrap">
-                <iconify-icon icon="lucide:calendar" width="16" class="pay-input-icon"></iconify-icon>
-                <input class="pay-input" id="cardExpiry" type="text"
-                  inputmode="numeric" maxlength="7"
-                  placeholder="MM / AA" autocomplete="cc-exp" />
-              </div>
-            </div>
-            <div class="pay-field-group">
-              <label class="pay-label">CVV</label>
-              <div class="pay-input-wrap">
-                <iconify-icon icon="lucide:lock" width="16" class="pay-input-icon"></iconify-icon>
-                <input class="pay-input" id="cardCvv" type="text"
-                  inputmode="numeric" maxlength="4"
-                  placeholder="•••" autocomplete="cc-csc" />
-                <iconify-icon icon="lucide:help-circle" width="15" class="pay-input-icon-right" id="cvvHelp"></iconify-icon>
-              </div>
-            </div>
-          </div>
-
-          <div class="pay-field-group">
-            <label class="pay-label">Nombre en la tarjeta</label>
-            <div class="pay-input-wrap">
-              <iconify-icon icon="lucide:user" width="16" class="pay-input-icon"></iconify-icon>
-              <input class="pay-input pay-input-name" id="cardName" type="text"
-                placeholder="Como aparece en la tarjeta"
-                autocomplete="cc-name" />
-            </div>
-          </div>
+          <p class="stripe-checkout-desc">
+            Serás redirigido a la página segura de Stripe para completar tu pago.
+          </p>
         </div>
 
         <button class="btn-buy-primary btn-pay-now" id="btnBuy">
           <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
-          <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span></span>
+          <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span> con Stripe</span>
           <span class="btn-buy-spinner"></span>
         </button>
 

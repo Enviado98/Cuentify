@@ -622,7 +622,7 @@ function openBuySheet(account, priceDisplay) {
   const transferNote = document.getElementById('transferAmountNote');
   if (transferNote) transferNote.textContent = totalFmt + ' MXN';
 
-  switchPayMethod('card');
+  showStripePanel();
   resetPayForm();
   buySheet.classList.add('open');
   buyOverlay.classList.add('visible');
@@ -810,7 +810,7 @@ async function tryRecoverReservation() {
     const transferNote = document.getElementById('transferAmountNote');
     if (transferNote) transferNote.textContent = totalFmt + ' MXN';
 
-    switchPayMethod('card');
+    showStripePanel();
     resetPayForm();
 
     // Abrir sheet directo en paso 2 (pago)
@@ -910,26 +910,11 @@ function showUnavailableError() {
 }
 
 function resetPayForm() {
-  ['cardNumber', 'cardExpiry', 'cardCvv', 'cardName'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
   btnBuy.classList.remove('loading');
   btnBuy.disabled = false;
 
-  // Actualizar solo el span de monto, sin reconstruir innerHTML
   const amountSpan = document.getElementById('btnPayAmount');
   if (amountSpan) amountSpan.textContent = buyHeaderTotal.textContent || '$0.00';
-
-  // Reset card visual
-  const cvn = document.getElementById('cardVisualNumber');
-  const cvna = document.getElementById('cardVisualName');
-  const cve = document.getElementById('cardVisualExpiry');
-  const cvb = document.getElementById('cardVisualBrand');
-  if (cvn)  cvn.textContent  = '•••• •••• •••• ••••';
-  if (cvna) cvna.textContent = 'NOMBRE COMPLETO';
-  if (cve)  cve.textContent  = 'MM / AA';
-  if (cvb)  cvb.innerHTML    = '';
 
   // Reset upload transfer
   compressedBlob = null;
@@ -981,70 +966,34 @@ btnBackToSummary.addEventListener('click', () => {
 document.getElementById('btnCancelPurchase')?.addEventListener('click', () => closeBuySheet(true));
 document.getElementById('btnCancelPurchaseCard')?.addEventListener('click', () => closeBuySheet(true));
 
+
 /* ── Método de pago ── */
-function switchPayMethod(method) {
-  const isCard   = method === 'card';
-  const showEl   = document.getElementById(isCard ? 'panelCard' : 'panelTransfer');
-  const hideEl   = document.getElementById(isCard ? 'panelTransfer' : 'panelCard');
+document.getElementById('payOptCard').addEventListener('click', () => showStripePanel());
+document.getElementById('payOptTransfer').addEventListener('click', () => showTransferPanel());
 
-  document.getElementById('payOptCard').classList.toggle('active', isCard);
-  document.getElementById('payOptTransfer').classList.toggle('active', !isCard);
-
-  hideEl.style.display = 'none';
-  hideEl.classList.remove('entering');
-
-  showEl.style.display = 'block';
-  // Force reflow so animation triggers
-  void showEl.offsetWidth;
-  showEl.classList.add('entering');
-  showEl.addEventListener('animationend', () => showEl.classList.remove('entering'), { once: true });
+function showStripePanel() {
+  document.getElementById('payOptCard').classList.add('active');
+  document.getElementById('payOptTransfer').classList.remove('active');
+  const pc = document.getElementById('panelCard');
+  const pt = document.getElementById('panelTransfer');
+  pt.style.display = 'none';
+  pc.style.display = 'block';
+  void pc.offsetWidth;
+  pc.classList.add('entering');
+  pc.addEventListener('animationend', () => pc.classList.remove('entering'), { once: true });
 }
 
-document.getElementById('payOptCard').addEventListener('click', () => switchPayMethod('card'));
-document.getElementById('payOptTransfer').addEventListener('click', () => switchPayMethod('transfer'));
-
-/* ── Card visual preview ── */
-const cardVisualNumber = document.getElementById('cardVisualNumber');
-const cardVisualName   = document.getElementById('cardVisualName');
-const cardVisualExpiry = document.getElementById('cardVisualExpiry');
-const cardVisualBrand  = document.getElementById('cardVisualBrand');
-
-const CARD_BRANDS = {
-  visa:       { pattern: /^4/,            icon: '<iconify-icon icon="logos:visa" width="42" height="28"></iconify-icon>' },
-  mastercard: { pattern: /^5[1-5]|^2[2-7]/, icon: '<iconify-icon icon="logos:mastercard" width="42" height="28"></iconify-icon>' },
-  amex:       { pattern: /^3[47]/,        icon: '<iconify-icon icon="logos:amex" width="42" height="28"></iconify-icon>' },
-};
-
-function detectBrand(num) {
-  for (const [, b] of Object.entries(CARD_BRANDS)) {
-    if (b.pattern.test(num)) return b.icon;
-  }
-  return '';
+function showTransferPanel() {
+  document.getElementById('payOptCard').classList.remove('active');
+  document.getElementById('payOptTransfer').classList.add('active');
+  const pc = document.getElementById('panelCard');
+  const pt = document.getElementById('panelTransfer');
+  pc.style.display = 'none';
+  pt.style.display = 'block';
+  void pt.offsetWidth;
+  pt.classList.add('entering');
+  pt.addEventListener('animationend', () => pt.classList.remove('entering'), { once: true });
 }
-
-document.getElementById('cardNumber').addEventListener('input', function () {
-  let v = this.value.replace(/\D/g, '').substring(0, 16);
-  this.value = v.replace(/(.{4})/g, '$1 ').trim();
-  const raw = v.padEnd(16, '•');
-  cardVisualNumber.textContent =
-    raw.substring(0,4) + ' ' + raw.substring(4,8) + ' ' + raw.substring(8,12) + ' ' + raw.substring(12,16);
-  cardVisualBrand.innerHTML = detectBrand(v);
-});
-
-document.getElementById('cardExpiry').addEventListener('input', function () {
-  let v = this.value.replace(/\D/g, '').substring(0, 4);
-  if (v.length >= 2) v = v.substring(0, 2) + ' / ' + v.substring(2);
-  this.value = v;
-  cardVisualExpiry.textContent = v || 'MM / AA';
-});
-
-document.getElementById('cardCvv').addEventListener('input', function () {
-  this.value = this.value.replace(/\D/g, '').substring(0, 4);
-});
-
-document.getElementById('cardName').addEventListener('input', function () {
-  cardVisualName.textContent = this.value.trim().toUpperCase() || 'NOMBRE COMPLETO';
-});
 
 /* ── Copiar CLABE ── */
 document.getElementById('transferCopyBtn').addEventListener('click', function () {
@@ -1305,16 +1254,7 @@ btnBuy.addEventListener('click', async () => {
   }
 });
 
-function shakeInput(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('error');
-  el.style.animation = 'shake 0.35s ease';
-  setTimeout(() => {
-    el.classList.remove('error');
-    el.style.animation = '';
-  }, 500);
-}
+
 
 function showSuccessToast() {
   const toast = document.createElement('div');
