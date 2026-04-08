@@ -1262,27 +1262,47 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
   }
 });
 
-/* ── Pagar con tarjeta ── */
+/* ── Pagar con tarjeta — Stripe Checkout ── */
 btnBuy.addEventListener('click', async () => {
   if (btnBuy.disabled) return;
-
-  const number = document.getElementById('cardNumber').value.replace(/\s/g, '');
-  const expiry = document.getElementById('cardExpiry').value;
-  const cvv    = document.getElementById('cardCvv').value;
-  const name   = document.getElementById('cardName').value.trim();
-
-  if (number.length < 15) { shakeInput('cardNumber'); return; }
-  if (expiry.length < 7)  { shakeInput('cardExpiry'); return; }
-  if (cvv.length < 3)     { shakeInput('cardCvv'); return; }
-  if (!name)              { shakeInput('cardName'); return; }
 
   btnBuy.disabled = true;
   btnBuy.classList.add('loading');
 
-  // TODO: Conectar Stripe aquí
-  await new Promise(r => setTimeout(r, 1800));
-  closeBuySheet();
-  showSuccessToast();
+  try {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    const amount       = parseFloat(currentAccount.price) || 0;
+    const product_name = currentProduct?.name || 'Cuenta digital';
+    const user_email   = authSession?.user?.email || null;
+
+    // Crear Checkout Session en la Edge Function
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+      body: JSON.stringify({ account_id: currentAccount.id, amount, product_name, user_email }),
+    });
+
+    const { url, error } = await res.json();
+    if (error || !url) throw new Error(error || 'No se pudo iniciar el pago.');
+
+    // Redirigir a Stripe Checkout
+    window.location.href = url;
+
+  } catch (err) {
+    console.error('Error al iniciar pago:', err);
+    btnBuy.disabled = false;
+    btnBuy.classList.remove('loading');
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.style.background = '#EF4444';
+    toast.innerHTML = `<iconify-icon icon="lucide:alert-circle" width="18"></iconify-icon><span>${err.message || 'Error al conectar con el servidor de pagos.'}</span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  }
 });
 
 function shakeInput(id) {
@@ -1353,6 +1373,42 @@ supabase.auth.getSession().then(({ data: { session } }) => {
   updateMenuAuth(session?.user || null);
   tryRecoverReservation();
 });
+
+// ── Manejar retorno desde Stripe Checkout ──
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+
+  if (!payment) return;
+
+  // Limpiar el parámetro de la URL sin recargar
+  const cleanUrl = window.location.pathname;
+  history.replaceState({}, '', cleanUrl);
+
+  if (payment === 'success') {
+    // Liberar sessionStorage de reserva (ya fue pagada)
+    sessionStorage.removeItem('reserveDeadline');
+    sessionStorage.removeItem('reserveAccountId');
+    sessionStorage.removeItem('reserveAccountData');
+
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.innerHTML = '<iconify-icon icon="lucide:check-circle" width="18"></iconify-icon><span>¡Pago completado! Recibirás los datos pronto.</span>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 5000);
+  }
+
+  if (payment === 'cancelled') {
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.style.background = '#6B7280';
+    toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Pago cancelado. Tu reserva sigue activa.</span>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  }
+})();
 
 setTimeout(() => {
   if (productsLoading.style.display !== 'none') {
