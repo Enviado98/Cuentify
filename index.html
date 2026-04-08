@@ -101,14 +101,11 @@
     </div>
 
     <div class="accounts-section">
-      <p class="accounts-section-label">Cuentas disponibles</p>
-      <div class="accounts-list" id="accountsList"></div>
-      <div class="accounts-loading" id="accountsLoading">
-        <div class="spinner"></div>
-      </div>
+      <p class="accounts-section-label">Elige tu plan</p>
+      <div class="order-type-list" id="orderTypeList"></div>
       <div class="accounts-empty" id="accountsEmpty" style="display:none;">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-        <p>No hay cuentas disponibles por ahora.</p>
+        <p>Este producto no tiene precios configurados aún.</p>
       </div>
     </div>
 
@@ -208,6 +205,7 @@
         <div class="buy-product-info">
           <div class="buy-product-name" id="buySheetTitle">—</div>
           <div class="buy-product-desc" id="buySheetDesc">—</div>
+          <div class="buy-type-badge" id="buyTypeBadge"></div>
         </div>
       </div>
 

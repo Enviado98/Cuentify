@@ -21,7 +21,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let currentTab     = 'streaming';
 let menuOpen       = false;
 let currentProduct = null;
-let currentAccount = null;
+let selectedOrderType = null; // se asigna en openBuySheet
 let currentUser    = null;          // sesión activa de Supabase Auth
 let pendingAccount = null;          // cuenta que el usuario quería comprar antes del login
 
@@ -259,8 +259,6 @@ const detailHeroImg         = document.getElementById('detailHeroImg');
 const detailHeroPlaceholder = document.getElementById('detailHeroPlaceholder');
 const detailHeroTitle       = document.getElementById('detailHeroTitle');
 const detailHeroSub         = document.getElementById('detailHeroSub');
-const accountsList          = document.getElementById('accountsList');
-const accountsLoading       = document.getElementById('accountsLoading');
 const accountsEmpty         = document.getElementById('accountsEmpty');
 
 // ── ELEMENTS: BUY SHEET ──
@@ -378,21 +376,6 @@ async function loadAllCategories() {
     return;
   }
 
-  // Contar cuentas disponibles
-  const productIds = data.map(p => p.id);
-  const now = new Date().toISOString();
-  const { data: countData } = await supabase
-    .from('accounts')
-    .select('product_id')
-    .in('product_id', productIds)
-    .eq('is_available', true)
-    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`);
-
-  const countMap = {};
-  (countData || []).forEach(row => {
-    countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
-  });
-
   // Renderizar por sección: primero limpiar skeletons, luego insertar cards escalonados
   categories.forEach(cat => {
     const grid    = document.getElementById(`grid-${cat}`);
@@ -408,7 +391,6 @@ async function loadAllCategories() {
     }
 
     catProducts.forEach((product, i) => {
-      product._accountsCount = countMap[product.id] || 0;
       const card = buildCard(product);
       card.style.animationDelay = `${i * 60}ms`;
       grid.appendChild(card);
@@ -439,22 +421,7 @@ async function loadInternetProducts() {
     return;
   }
 
-  const productIds = data.map(p => p.id);
-  const now = new Date().toISOString();
-  const { data: countData } = await supabase
-    .from('accounts')
-    .select('product_id')
-    .in('product_id', productIds)
-    .eq('is_available', true)
-    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`);
-
-  const countMap = {};
-  (countData || []).forEach(row => {
-    countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
-  });
-
   data.forEach((product, i) => {
-    product._accountsCount = countMap[product.id] || 0;
     const card = buildCard(product);
     card.style.animationDelay = `${i * 60}ms`;
     grid.appendChild(card);
@@ -470,8 +437,12 @@ function buildCard(product) {
   const card = document.createElement('div');
   card.className = 'product-card';
 
-  const count = product._accountsCount ?? 0;
-  const countLabel = count === 1 ? '1 cuenta' : `${count} cuentas`;
+  // Precio a mostrar: el más bajo disponible, o "Consultar" si no hay ninguno
+  const prices = [product.price_full, product.price_shared].filter(v => v != null && v > 0);
+  const minPrice = prices.length ? Math.min(...prices) : null;
+  const priceLabel = minPrice != null
+    ? `Desde $${Number(minPrice).toFixed(0)} MXN`
+    : 'Consultar precio';
 
   const imgHtml = product.image_url
     ? `<img class="product-thumb" src="${product.image_url}" alt="${product.name}" loading="lazy" />`
@@ -483,10 +454,7 @@ function buildCard(product) {
       <div class="product-card-body">
         <div class="product-name">${product.name}</div>
         <div class="product-divider"></div>
-        <div class="product-count">
-          <span class="product-count-dot"></span>
-          ${countLabel} disponibles
-        </div>
+        <div class="product-price-label">${priceLabel}</div>
       </div>
     </div>
   `;
@@ -495,7 +463,7 @@ function buildCard(product) {
   const img = card.querySelector('.product-thumb');
   if (img) {
     img.addEventListener('load',  () => img.classList.add('loaded'));
-    img.addEventListener('error', () => img.classList.add('loaded')); // no se queda en blanco
+    img.addEventListener('error', () => img.classList.add('loaded'));
     if (img.complete) img.classList.add('loaded');
   }
 
@@ -512,7 +480,7 @@ function openDetailView(product) {
 
   detailNavTitle.textContent  = product.name;
   detailHeroTitle.textContent = product.name;
-  detailHeroSub.textContent   = 'Elige la cuenta que más te convenga';
+  detailHeroSub.textContent   = 'Elige el plan que más te convenga';
 
   if (product.image_url) {
     detailHeroImg.src = product.image_url;
@@ -527,7 +495,60 @@ function openDetailView(product) {
   viewHome.classList.add('pushed');
   viewDetail.scrollTop = 0;
 
-  loadAccounts(product.id, product);
+  renderOrderTypes(product);
+}
+
+function renderOrderTypes(product) {
+  const list  = document.getElementById('orderTypeList');
+  const empty = document.getElementById('accountsEmpty');
+  list.innerHTML = '';
+
+  const options = [
+    {
+      type:  'full',
+      label: 'Cuenta completa',
+      desc:  'Acceso total a la cuenta. Solo para ti.',
+      icon:  'lucide:shield-check',
+      price: product.price_full,
+    },
+    {
+      type:  'shared',
+      label: 'Perfil compartido',
+      desc:  'Un perfil dentro de una cuenta compartida.',
+      icon:  'lucide:users',
+      price: product.price_shared,
+    },
+  ];
+
+  const available = options.filter(o => o.price != null && o.price > 0);
+
+  if (!available.length) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  available.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'order-type-card';
+    card.style.animationDelay = `${i * 80}ms`;
+    card.innerHTML = `
+      <div class="order-type-icon">
+        <iconify-icon icon="${opt.icon}" width="22"></iconify-icon>
+      </div>
+      <div class="order-type-info">
+        <div class="order-type-name">${opt.label}</div>
+        <div class="order-type-desc">${opt.desc}</div>
+      </div>
+      <div class="order-type-price-wrap">
+        <span class="order-type-price">$${Number(opt.price).toFixed(0)}</span>
+        <span class="order-type-currency">MXN</span>
+      </div>
+      <svg class="account-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    `;
+    card.addEventListener('click', () => openBuySheet(opt));
+    list.appendChild(card);
+  });
 }
 
 function closeDetailView() {
@@ -544,126 +565,28 @@ window.addEventListener('popstate', () => {
 
 
 /* ════════════════════════════════════
-   LOAD ACCOUNTS
+   BUY SHEET — 2 pasos (sin reservas)
 ════════════════════════════════════ */
-async function loadAccounts(productId, product) {
-  accountsList.innerHTML = '';
-  accountsEmpty.style.display = 'none';
-  accountsLoading.style.display = 'flex';
+let selectedOrderType = null; // { type, label, price }
 
-  // Excluir cuentas no disponibles y las reservadas activamente por otro usuario
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('accounts')
-    .select('*')
-    .eq('product_id', productId)
-    .eq('is_available', true)
-    .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`)
-    .order('expires_at', { ascending: true });
+function openBuySheet(opt) {
+  selectedOrderType = opt;
 
-  accountsLoading.style.display = 'none';
-
-  if (error || !data || data.length === 0) {
-    accountsEmpty.style.display = 'flex';
-    return;
-  }
-
-  data.forEach(account => {
-    account._productImageUrl = product.image_url;
-    accountsList.appendChild(buildAccountCard(account));
-  });
-}
-
-function buildAccountCard(account) {
-  const card = document.createElement('div');
-  card.className = 'account-card';
-
-  const days  = daysRemaining(account);
-  const price = calcPrice(account);
-
-  const thumbHtml = account._productImageUrl
-    ? `<div class="account-card-thumb"><img src="${account._productImageUrl}" alt="" /></div>`
-    : `<div class="account-card-thumb">📦</div>`;
-
-  const daysBadge = days !== null
-    ? `<span class="account-card-days">
-         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-         ${days} día${days !== 1 ? 's' : ''}
-       </span>`
-    : '';
-
-  const hours = account.delivery_hours ?? 12;
-  const durationBadge = `<span class="account-card-duration">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    ${hours}h entrega
-  </span>`;
-
-  const desc = account.description || (days !== null ? `Expira en ${days} días` : 'Cuenta disponible');
-
-  const priceDisplay = price !== null
-    ? `$${price.toFixed(2)}`
-    : (account.price ? `$${parseFloat(account.price).toFixed(2)}` : '$0.00');
-
-  card.innerHTML = `
-    ${thumbHtml}
-    <div class="account-card-info">
-      <div class="account-card-name">${account.description || 'Cuenta disponible'}</div>
-      <div class="account-card-desc">${desc}</div>
-      <div class="account-card-meta">
-        ${daysBadge}
-        ${durationBadge}
-      </div>
-    </div>
-    <div class="account-card-price-wrap">
-      <span class="account-card-price">${priceDisplay}</span>
-      <span class="account-card-currency">MXN</span>
-    </div>
-    <svg class="account-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-  `;
-
-  card.addEventListener('click', () => openBuySheet(account, priceDisplay));
-  return card;
-}
-
-
-/* ════════════════════════════════════
-   PRICE HELPERS
-════════════════════════════════════ */
-function daysRemaining(item) {
-  if (!item.expires_at) return null;
-  const diff = new Date(item.expires_at) - new Date();
-  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-}
-
-function calcPrice(item) {
-  if (!item.base_price) return null;
-  const days = daysRemaining(item);
-  if (days === null) return parseFloat(item.base_price);
-  return parseFloat(((days / 30) * item.base_price).toFixed(2));
-}
-
-
-/* ════════════════════════════════════
-   BUY SHEET — 2 pasos
-════════════════════════════════════ */
-// ── Timer de reserva ──
-let reserveTimer    = null;  // setInterval del countdown
-let reserveDeadline = null;  // Date cuando expira la reserva
-
-function openBuySheet(account, priceDisplay) {
-  currentAccount = account;
-
-  const price    = parseFloat(account.price) || 0;
+  const price    = parseFloat(opt.price) || 0;
   const totalFmt = `$${price.toFixed(2)}`;
+  const typeLabel = opt.type === 'full' ? 'Cuenta completa' : 'Perfil compartido';
 
   buySheetTitle.textContent = currentProduct ? currentProduct.name : '—';
-  buySheetDesc.textContent  = account.description || 'Cuenta disponible';
+  buySheetDesc.textContent  = opt.label;
   buySheetPrice.textContent = totalFmt;
 
+  const badge = document.getElementById('buyTypeBadge');
+  if (badge) badge.textContent = typeLabel;
+
   buyThumb.innerHTML = '';
-  if (account._productImageUrl) {
+  if (currentProduct?.image_url) {
     const img = document.createElement('img');
-    img.src = account._productImageUrl;
+    img.src = currentProduct.image_url;
     buyThumb.appendChild(img);
   }
 
@@ -679,77 +602,12 @@ function openBuySheet(account, priceDisplay) {
   buyOverlay.classList.add('visible');
 }
 
-async function closeBuySheet(releaseReserve = true) {
-  // Si el usuario cierra sin completar el pago, liberar la reserva
-  if (releaseReserve && currentAccount) {
-    await supabase
-      .from('accounts')
-      .update({ reserved: false, reserved_until: null })
-      .eq('id', currentAccount.id);
-  }
-  clearReserveTimer();
+function closeBuySheet() {
   disableNavigationBlock();
   buySheet.classList.remove('open');
   buySheetPay.classList.remove('open');
   buyOverlay.classList.remove('visible');
-  currentAccount = null;
-}
-
-function clearReserveTimer() {
-  if (reserveTimer) { clearInterval(reserveTimer); reserveTimer = null; }
-  reserveDeadline = null;
-  sessionStorage.removeItem('reserveDeadline');
-  sessionStorage.removeItem('reserveAccountId');
-  sessionStorage.removeItem('reserveAccountData');
-  const el = document.getElementById('reserveCountdown');
-  if (el) el.style.display = 'none';
-}
-
-function startReserveTimer() {
-  clearReserveTimer();
-  const MINUTES = 30;
-  reserveDeadline = new Date(Date.now() + MINUTES * 60 * 1000);
-  // Guardar en sessionStorage para recuperar si el usuario refresca
-  sessionStorage.setItem('reserveDeadline', reserveDeadline.toISOString());
-  sessionStorage.setItem('reserveAccountId', currentAccount.id);
-  sessionStorage.setItem('reserveAccountData', JSON.stringify(currentAccount));
-
-  const el = document.getElementById('reserveCountdown');
-  if (el) el.style.display = 'flex';
-
-  reserveTimer = setInterval(() => {
-    const remaining = reserveDeadline - Date.now();
-    if (remaining <= 0) {
-      clearReserveTimer();
-      disableNavigationBlock();
-      closeBuySheet(false);
-      showExpiredToast();
-      return;
-    }
-    const m = Math.floor(remaining / 60000);
-    const s = Math.floor((remaining % 60000) / 1000);
-    const txt = `${m}:${s.toString().padStart(2,'0')}`;
-    if (el) {
-      el.querySelector('.reserve-time').textContent = txt;
-      // Urgencia visual en 3 niveles
-      el.classList.remove('urgent', 'warning');
-      if (remaining < 2 * 60 * 1000) {
-        el.classList.add('urgent');   // rojo + parpadeo
-      } else if (remaining < 10 * 60 * 1000) {
-        el.classList.add('warning'); // amarillo/naranja
-      }
-    }
-  }, 1000);
-}
-
-function showExpiredToast() {
-  const toast = document.createElement('div');
-  toast.className = 'success-toast';
-  toast.style.background = '#EF4444';
-  toast.innerHTML = '<iconify-icon icon="lucide:clock" width="18"></iconify-icon><span>Tu reserva expiró. La cuenta volvió a estar disponible.</span>';
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  selectedOrderType = null;
 }
 
 /* ── Bloqueo de navegación durante el pago ── */
@@ -758,12 +616,7 @@ let navigationBlocked = false;
 function enableNavigationBlock() {
   if (navigationBlocked) return;
   navigationBlocked = true;
-
-  // Bloquear cierre/recarga de pestaña
   window.addEventListener('beforeunload', handleBeforeUnload);
-
-  // Bloquear botón atrás del navegador — empujamos un estado al historial
-  // para que el "atrás" vuelva aquí en lugar de salir
   history.pushState({ paymentLocked: true }, '');
   window.addEventListener('popstate', handlePopState);
 }
@@ -777,197 +630,33 @@ function disableNavigationBlock() {
 
 function handleBeforeUnload(e) {
   e.preventDefault();
-  e.returnValue = '¿Seguro que quieres salir? Tu reserva se cancelará.';
+  e.returnValue = '¿Seguro que quieres salir? Tu pedido no se completará.';
   return e.returnValue;
 }
 
-function handlePopState(e) {
-  // El usuario tocó "atrás" — volvemos a empujar el estado para mantenerlo aquí
+function handlePopState() {
   if (navigationBlocked) {
     history.pushState({ paymentLocked: true }, '');
-    // Mostrar un toast recordatorio
     showStayToast();
   }
 }
 
 function showStayToast() {
-  // Evitar múltiples toasts apilados
   if (document.querySelector('.stay-toast')) return;
   const toast = document.createElement('div');
   toast.className = 'success-toast stay-toast';
   toast.style.background = '#F59E0B';
-  toast.innerHTML = '<iconify-icon icon="lucide:lock" width="18"></iconify-icon><span>Completa el pago o toca "Cancelar Compra" para salir.</span>';
+  toast.innerHTML = '<iconify-icon icon="lucide:lock" width="18"></iconify-icon><span>Completa el pago o toca "Cancelar" para salir.</span>';
   document.body.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add('show'));
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
 }
 
-/* ── Recuperar reserva activa si el usuario refrescó la página ── */
-async function tryRecoverReservation() {
-  const savedDeadline   = sessionStorage.getItem('reserveDeadline');
-  const savedAccountId  = sessionStorage.getItem('reserveAccountId');
-  const savedAccountRaw = sessionStorage.getItem('reserveAccountData');
-
-  if (!savedDeadline || !savedAccountId || !savedAccountRaw) return;
-
-  const deadline = new Date(savedDeadline);
-  const remaining = deadline - Date.now();
-
-  // Si ya expiró, limpiar y liberar en BD
-  if (remaining <= 0) {
-    sessionStorage.removeItem('reserveDeadline');
-    sessionStorage.removeItem('reserveAccountId');
-    sessionStorage.removeItem('reserveAccountData');
-    await supabase
-      .from('accounts')
-      .update({ reserved: false, reserved_until: null })
-      .eq('id', savedAccountId);
-    return;
-  }
-
-  // Reserva aún vigente — restaurar estado y mostrar el sheet de pago
-  try {
-    const savedAccount = JSON.parse(savedAccountRaw);
-    currentAccount  = savedAccount;
-    reserveDeadline = deadline;
-
-    const price    = parseFloat(savedAccount.price) || 0;
-    const totalFmt = `$${price.toFixed(2)}`;
-
-    // Obtener producto para mostrar datos del sheet
-    const { data: productData } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', savedAccount.product_id)
-      .single();
-
-    if (productData) {
-      currentProduct = productData;
-      buySheetTitle.textContent = productData.name;
-      savedAccount._productImageUrl = productData.image_url;
-
-      buyThumb.innerHTML = '';
-      if (productData.image_url) {
-        const img = document.createElement('img');
-        img.src = productData.image_url;
-        buyThumb.appendChild(img);
-      }
-    }
-
-    buySheetDesc.textContent  = savedAccount.description || 'Cuenta disponible';
-    buySheetPrice.textContent = totalFmt;
-    buyHeaderTotal.textContent = totalFmt;
-    btnPayAmount.textContent   = totalFmt;
-    const transferNote = document.getElementById('transferAmountNote');
-    if (transferNote) transferNote.textContent = totalFmt + ' MXN';
-
-    showStripePanel();
-    resetPayForm();
-
-    // Abrir sheet directo en paso 2 (pago)
-    buySheet.classList.add('open');
-    buyOverlay.classList.add('visible');
-    buySheetPay.classList.add('open');
-
-    // Reanudar el countdown con el tiempo restante
-    const el = document.getElementById('reserveCountdown');
-    if (el) el.style.display = 'flex';
-
-    reserveTimer = setInterval(() => {
-      const rem = reserveDeadline - Date.now();
-      if (rem <= 0) {
-        clearReserveTimer();
-        disableNavigationBlock();
-        closeBuySheet(false);
-        showExpiredToast();
-        return;
-      }
-      const m = Math.floor(rem / 60000);
-      const s = Math.floor((rem % 60000) / 1000);
-      if (el) {
-        el.querySelector('.reserve-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        el.classList.remove('urgent', 'warning');
-        if (rem < 2 * 60 * 1000)        el.classList.add('urgent');
-        else if (rem < 10 * 60 * 1000)  el.classList.add('warning');
-      }
-    }, 1000);
-
-    enableNavigationBlock();
-
-    // Mostrar toast de bienvenida de vuelta
-    const toast = document.createElement('div');
-    toast.className = 'success-toast';
-    toast.style.background = '#4F46E5';
-    toast.innerHTML = '<iconify-icon icon="lucide:lock" width="18"></iconify-icon><span>Tu reserva sigue activa. Completa el pago.</span>';
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
-    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
-
-  } catch (err) {
-    console.error('Error al recuperar reserva:', err);
-    clearReserveTimer();
-  }
-}
-
-async function showBuyStep(n) {
-  if (n === 2) {
-    // ── Intentar reservar la cuenta de forma atómica ──
-    const now       = new Date().toISOString();
-    const deadline  = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-    // UPDATE condicional: solo actualiza si la cuenta NO está reservada por otro
-    // Cubre 3 casos: reserved=false, reserved_until IS NULL, o reserved_until ya expiró
-    const { data: updated, error } = await supabase
-      .from('accounts')
-      .update({ reserved: true, reserved_until: deadline })
-      .eq('id', currentAccount.id)
-      .eq('is_available', true)
-      .or(`reserved.eq.false,reserved_until.is.null,reserved_until.lt.${now}`)
-      .select('id');
-
-    if (error || !updated || updated.length === 0) {
-      // Alguien más llegó primero — mostrar error y cerrar
-      showUnavailableError();
-      closeBuySheet(false);
-      return;
-    }
-
-    // Reserva exitosa — iniciar countdown, bloquear navegación y mostrar paso 2
-    startReserveTimer();
-    enableNavigationBlock();
-    buySheetPay.classList.add('open');
-  } else {
-    // Volver al paso 1 — liberar reserva
-    if (currentAccount) {
-      await supabase
-        .from('accounts')
-        .update({ reserved: false, reserved_until: null })
-        .eq('id', currentAccount.id);
-    }
-    clearReserveTimer();
-    disableNavigationBlock();
-    buySheetPay.classList.remove('open');
-  }
-}
-
-function showUnavailableError() {
-  const toast = document.createElement('div');
-  toast.className = 'success-toast';
-  toast.style.background = '#EF4444';
-  toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Esta cuenta ya fue reservada por otro usuario.</span>';
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
-}
-
 function resetPayForm() {
   btnBuy.classList.remove('loading');
   btnBuy.disabled = false;
-
   const amountSpan = document.getElementById('btnPayAmount');
   if (amountSpan) amountSpan.textContent = buyHeaderTotal.textContent || '$0.00';
-
-  // Reset upload transfer
   compressedBlob = null;
   const area = document.getElementById('transferUploadArea');
   const fi   = document.getElementById('transferFileInput');
@@ -986,36 +675,31 @@ function resetPayForm() {
 }
 
 buyOverlay.addEventListener('click', () => {
-  // Si está en la pantalla de pago (paso 2), no dejar cerrar por overlay
-  if (buySheetPay.classList.contains('open')) {
-    showStayToast();
-    return;
-  }
-  closeBuySheet(true);
+  if (buySheetPay.classList.contains('open')) { showStayToast(); return; }
+  closeBuySheet();
 });
-btnBuyCancel.addEventListener('click', () => closeBuySheet(true));
+btnBuyCancel.addEventListener('click', () => closeBuySheet());
+
 btnGoToPayment.addEventListener('click', async () => {
-  // Verificar sesión antes de continuar al pago
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    // Guardar la cuenta pendiente y pedir login
-    pendingAccount = currentAccount;
-    // Cerrar el sheet de resumen primero
+    pendingAccount = selectedOrderType;
     buySheet.classList.remove('open');
     buyOverlay.classList.remove('visible');
     openAuthModal('Inicia sesión para continuar con tu compra');
     return;
   }
-  showBuyStep(2);
-});
-btnBackToSummary.addEventListener('click', () => {
-  // Volver al paso 1 libera la reserva (equivale a cancelar)
-  closeBuySheet(true);
+  buySheetPay.classList.add('open');
+  enableNavigationBlock();
 });
 
-// Botones "Cancelar compra" dentro del paso 2
-document.getElementById('btnCancelPurchase')?.addEventListener('click', () => closeBuySheet(true));
-document.getElementById('btnCancelPurchaseCard')?.addEventListener('click', () => closeBuySheet(true));
+btnBackToSummary.addEventListener('click', () => {
+  buySheetPay.classList.remove('open');
+  disableNavigationBlock();
+});
+
+document.getElementById('btnCancelPurchase')?.addEventListener('click', () => closeBuySheet());
+document.getElementById('btnCancelPurchaseCard')?.addEventListener('click', () => closeBuySheet());
 
 
 /* ── Método de pago ── */
@@ -1176,37 +860,21 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
     setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
     return;
   }
+  if (!selectedOrderType || !currentProduct) return;
+
   const sendBtn = document.getElementById('btnTransferSend');
   sendBtn.disabled = true;
   sendBtn.querySelector('span').textContent = 'Enviando…';
 
   try {
-    // 0. Verificar que la reserva sigue vigente antes de subir
-    const now = new Date().toISOString();
-    const { data: accountCheck, error: checkError } = await supabase
-      .from('accounts')
-      .select('id, reserved, reserved_until')
-      .eq('id', currentAccount.id)
-      .single();
-
-    const reservaVigente = accountCheck &&
-      accountCheck.reserved === true &&
-      accountCheck.reserved_until &&
-      new Date(accountCheck.reserved_until) > new Date();
-
-    if (checkError || !reservaVigente) {
-      throw new Error('Tu reserva ya expiró. Esta cuenta no está disponible para ti.');
-    }
-
-    // 1. Convertir a Blob JPEG limpio (garantiza tipo correcto independientemente del fallback)
+    // 1. Subir comprobante a Supabase Storage
     let uploadBlob = compressedBlob;
     if (!(uploadBlob instanceof Blob) || uploadBlob.type !== 'image/jpeg') {
       uploadBlob = new Blob([uploadBlob], { type: 'image/jpeg' });
     }
 
-    // 2. Subir comprobante a Supabase Storage
     const fileName = `comprobantes/${Date.now()}_${Math.random().toString(36).substring(2,7)}.jpg`;
-    const { data: uploadData, error: uploadError } = await supabase
+    const { error: uploadError } = await supabase
       .storage
       .from('vouchers')
       .upload(fileName, uploadBlob, {
@@ -1215,41 +883,43 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
         upsert: false,
       });
 
-    if (uploadError) {
-      console.error('Storage error:', uploadError);
-      throw new Error('No se pudo subir el comprobante. Verifica que el bucket "vouchers" existe en Supabase Storage y es público.');
-    }
+    if (uploadError) throw new Error('No se pudo subir el comprobante.');
 
-    const { data: urlData } = supabase
-      .storage
-      .from('vouchers')
-      .getPublicUrl(fileName);
-
+    const { data: urlData } = supabase.storage.from('vouchers').getPublicUrl(fileName);
     const voucherUrl = urlData?.publicUrl;
     if (!voucherUrl) throw new Error('No se pudo obtener la URL del comprobante.');
 
-    // 3. Crear la orden en la tabla orders
+    // 2. Crear la orden
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     const { error: orderError } = await supabase
       .from('orders')
       .insert({
-        account_id:  currentAccount.id,
-        amount:      parseFloat(currentAccount.price) || 0,
-        voucher_url: voucherUrl,
-        status:      'pendiente',
-        user_id:     currentSession?.user?.id || null,
-        user_email:  currentSession?.user?.email || null,
+        product_id:      currentProduct.id,
+        order_type:      selectedOrderType.type,
+        amount:          parseFloat(selectedOrderType.price) || 0,
+        voucher_url:     voucherUrl,
+        status:          'pendiente',
+        delivery_status: 'pending',
+        user_id:         currentSession?.user?.id || null,
+        user_email:      currentSession?.user?.email || null,
       });
 
-    if (orderError) {
-      console.error('Orders insert error:', orderError);
-      throw new Error('No se pudo registrar el pedido: ' + orderError.message);
-    }
+    if (orderError) throw new Error('No se pudo registrar el pedido: ' + orderError.message);
 
-    // 4. Éxito — cerrar sin liberar reserva (el admin la elimina al aprobar)
     disableNavigationBlock();
-    closeBuySheet(false);
+    closeBuySheet();
     showSuccessToast();
+  } catch (err) {
+    console.error('Error al enviar comprobante:', err);
+    const sub = document.getElementById('transferUploadSub');
+    if (sub) sub.textContent = err.message || 'Error al enviar. Inténtalo de nuevo.';
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 2000);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.querySelector('span').textContent = 'Enviar comprobante';
+  }
+});
   } catch (err) {
     console.error('Error al enviar comprobante:', err);
     const sub = document.getElementById('transferUploadSub');
@@ -1265,6 +935,7 @@ document.getElementById('btnTransferSend').addEventListener('click', async () =>
 /* ── Pagar con tarjeta — Stripe Checkout ── */
 btnBuy.addEventListener('click', async () => {
   if (btnBuy.disabled) return;
+  if (!selectedOrderType || !currentProduct) return;
 
   btnBuy.disabled = true;
   btnBuy.classList.add('loading');
@@ -1279,17 +950,21 @@ btnBuy.addEventListener('click', async () => {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON}`,
       },
-      body: JSON.stringify({ account_id: currentAccount.id, user_email }),
+      body: JSON.stringify({
+        product_id:  currentProduct.id,
+        order_type:  selectedOrderType.type,
+        amount:      selectedOrderType.price,
+        product_name: currentProduct.name,
+        user_email,
+        user_id: authSession?.user?.id || null,
+      }),
     });
 
     const { url, error } = await res.json();
     if (error || !url) throw new Error(error || 'No se pudo iniciar el pago.');
 
-    // Desactivar el bloqueo de navegación ANTES de redirigir
-    // para que el navegador NO muestre el diálogo "¿Seguro que quieres salir?"
     disableNavigationBlock();
 
-    // Mostrar overlay de redirección — feedback visual mientras el browser navega
     const overlay = document.createElement('div');
     overlay.className = 'stripe-redirect-overlay';
     overlay.innerHTML = `
@@ -1301,8 +976,6 @@ btnBuy.addEventListener('click', async () => {
       <div class="stripe-redirect-sub">Pago seguro · SSL 256-bit · PCI DSS</div>
     `;
     document.body.appendChild(overlay);
-
-    // Pequeño delay para que el overlay sea visible antes del redirect
     setTimeout(() => { window.location.href = url; }, 300);
 
   } catch (err) {
@@ -1373,10 +1046,8 @@ switchTab("digital");
 loadAllCategories();
 loadTrends();
 
-// Recuperar sesión activa y reserva pendiente
 supabase.auth.getSession().then(({ data: { session } }) => {
   updateMenuAuth(session?.user || null);
-  tryRecoverReservation();
 });
 
 // ── Manejar retorno desde Stripe Checkout ──
@@ -1386,16 +1057,10 @@ supabase.auth.getSession().then(({ data: { session } }) => {
 
   if (!payment) return;
 
-  // Limpiar el parámetro de la URL sin recargar
   const cleanUrl = window.location.pathname;
   history.replaceState({}, '', cleanUrl);
 
   if (payment === 'success') {
-    // Liberar sessionStorage de reserva (ya fue pagada)
-    sessionStorage.removeItem('reserveDeadline');
-    sessionStorage.removeItem('reserveAccountId');
-    sessionStorage.removeItem('reserveAccountData');
-
     const toast = document.createElement('div');
     toast.className = 'success-toast';
     toast.innerHTML = '<iconify-icon icon="lucide:check-circle" width="18"></iconify-icon><span>¡Pago completado! Recibirás los datos pronto.</span>';
@@ -1408,7 +1073,7 @@ supabase.auth.getSession().then(({ data: { session } }) => {
     const toast = document.createElement('div');
     toast.className = 'success-toast';
     toast.style.background = '#6B7280';
-    toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Pago cancelado. Tu reserva sigue activa.</span>';
+    toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Pago cancelado.</span>';
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('show'));
     setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);

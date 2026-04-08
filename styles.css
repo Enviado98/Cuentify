@@ -283,24 +283,103 @@ body {
   opacity: 0.5;
 }
 
-.product-count {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.product-price-label {
   font-size: clamp(0.6rem, 1.8vw, 0.75rem);
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--blue);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.product-count-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
+/* ── Order type cards (detail view) ── */
+@keyframes cardRevealUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.order-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 24px;
+}
+
+.order-type-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: cardRevealUp 0.3s ease both;
+}
+.order-type-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
+
+.order-type-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #EFF6FF;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.order-type-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-type-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.order-type-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.order-type-price-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.order-type-price {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.order-type-currency {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Badge de tipo en el buy sheet */
+.buy-type-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--blue);
+  background: #EFF6FF;
+  border-radius: 6px;
+  padding: 2px 8px;
 }
 
 
