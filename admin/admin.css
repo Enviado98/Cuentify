@@ -856,13 +856,29 @@ html, body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .order-card-product {
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.order-card-email {
+  font-size: 0.75rem;
+  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -885,7 +901,6 @@ html, body {
   font-size: 0.75rem;
   color: var(--muted);
   font-weight: 600;
-  margin-bottom: 4px;
 }
 
 .order-card-actions {
@@ -894,11 +909,47 @@ html, body {
   padding-top: 10px;
   border-top: 1.5px solid #F3F4F6;
 }
-.order-card-actions .btn-approve,
-.order-card-actions .btn-reject {
+.order-card-actions .btn-approve {
   flex: 1;
   justify-content: center;
   padding: 10px;
+}
+
+/* Tipo de orden pill */
+.type-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--blue);
+  background: #EFF6FF;
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+/* Modal de entrega */
+.deliver-info-block {
+  background: #F8FAFF;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1.5px solid #E0E7FF;
+}
+.deliver-info-product {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.deliver-info-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.deliver-info-email {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 /* Comprobante grande en modal */

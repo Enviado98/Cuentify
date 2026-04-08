@@ -72,7 +72,7 @@
         <div class="loading-wrap" id="productsLoading"><div class="spinner"></div></div>
         <div class="table-wrap" id="productsTableWrap" style="display:none">
           <table class="table">
-            <thead><tr><th>Producto</th><th>Categoría</th><th>Cuentas</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Cuenta completa</th><th>Perfil compartido</th><th>Acciones</th></tr></thead>
             <tbody id="productsBody"></tbody>
           </table>
         </div>
@@ -123,18 +123,17 @@
         <div class="section-header">
           <div>
             <h1 class="section-title">Pedidos</h1>
-            <p class="section-sub">Comprobantes de transferencia</p>
+            <p class="section-sub">Gestiona entregas de credenciales</p>
           </div>
         </div>
         <div class="tabs-filter">
-          <button class="tab-filter active" data-status="pendiente">Pendientes</button>
-          <button class="tab-filter" data-status="aprobado">Aprobados</button>
-          <button class="tab-filter" data-status="rechazado">Rechazados</button>
+          <button class="tab-filter active" data-status="pending">Pendientes</button>
+          <button class="tab-filter" data-status="delivered">Entregados</button>
         </div>
         <div class="loading-wrap" id="ordersLoading"><div class="spinner"></div></div>
         <div class="table-wrap" id="ordersTableWrap" style="display:none">
           <table class="table">
-            <thead><tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Monto</th><th>Comprobante</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Tipo</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody id="ordersBody"></tbody>
           </table>
         </div>
@@ -248,6 +247,16 @@
           <label class="form-label">URL de imagen <span class="form-optional">Opcional</span></label>
           <input class="form-input" type="url" id="productImage" placeholder="https://..." />
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Precio cuenta completa <span class="form-optional">MXN</span></label>
+            <input class="form-input" type="number" id="productPriceFull" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio perfil compartido <span class="form-optional">MXN</span></label>
+            <input class="form-input" type="number" id="productPriceShared" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" id="productModalCancel">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar</button>
@@ -311,6 +320,39 @@
         <img class="voucher-img" id="voucherImg" src="" alt="Comprobante" />
       </div>
       <div class="modal-actions" id="voucherActions"></div>
+    </div>
+  </div>
+
+  <!-- MODAL COMPLETAR PEDIDO -->
+  <div class="modal-overlay" id="deliverModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Entregar pedido</h2>
+        <button class="modal-close" id="deliverModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="deliverOrderId" />
+        <div class="deliver-order-info" id="deliverOrderInfo"></div>
+        <div class="form-group">
+          <label class="form-label">Usuario / Email de la cuenta</label>
+          <input class="form-input" type="text" id="deliverUser" placeholder="ej. usuario@netflix.com" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="text" id="deliverPass" placeholder="ej. MiPass123!" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nota <span class="form-optional">Opcional</span></label>
+          <textarea class="form-input form-textarea" id="deliverNote" placeholder="ej. Perfil: el que dice 'tuyo'" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="deliverModalCancel">Cancelar</button>
+          <button type="button" class="btn-primary" id="deliverModalSubmit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+            Entregar
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -33,7 +33,7 @@ navItems.forEach(item => {
     closeSidebar();
     if (sec === 'productos')   loadProducts();
     if (sec === 'cuentas')     loadAccounts();
-    if (sec === 'pedidos')     loadOrders('pendiente');
+    if (sec === 'pedidos')     loadOrders('pending');
     if (sec === 'tendencias')  loadTrends();
     if (sec === 'banco')       loadBankInfo();
   });
@@ -129,16 +129,12 @@ async function loadProducts() {
   allProducts = data;
   refreshProductSelects();
 
-  const ids = data.map(p => p.id);
-  const { data: counts } = await sb.from('accounts').select('product_id').in('product_id', ids).eq('is_available', true);
-  const countMap = {};
-  (counts || []).forEach(r => { countMap[r.product_id] = (countMap[r.product_id] || 0) + 1; });
+  const fmt = v => v != null ? `$${Number(v).toFixed(2)}` : '—';
 
   // ── Tabla (desktop) ──
   const tbody = document.getElementById('productsBody');
   tbody.innerHTML = '';
   data.forEach(p => {
-    const c = countMap[p.id] || 0;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><div style="display:flex;align-items:center;gap:10px;">
@@ -146,7 +142,8 @@ async function loadProducts() {
         <strong>${p.name}</strong>
       </div></td>
       <td>${p.category || '—'}</td>
-      <td>${c} disponible${c !== 1 ? 's' : ''}</td>
+      <td>${fmt(p.price_full)}</td>
+      <td>${fmt(p.price_shared)}</td>
       <td>${actionBtns('edit-product','delete-product', p.id)}</td>`;
     tbody.appendChild(tr);
   });
@@ -155,7 +152,6 @@ async function loadProducts() {
   const cardsContainer = document.getElementById('productsCards');
   cardsContainer.innerHTML = '';
   data.forEach(p => {
-    const c = countMap[p.id] || 0;
     const div = document.createElement('div');
     div.className = 'data-card';
     div.innerHTML = `
@@ -172,8 +168,12 @@ async function loadProducts() {
           <span class="data-card-field-value">${p.category || '—'}</span>
         </div>
         <div class="data-card-field">
-          <span class="data-card-field-label">Cuentas</span>
-          <span class="data-card-field-value">${c} disponible${c !== 1 ? 's' : ''}</span>
+          <span class="data-card-field-label">Cuenta completa</span>
+          <span class="data-card-field-value">${fmt(p.price_full)}</span>
+        </div>
+        <div class="data-card-field">
+          <span class="data-card-field-label">Perfil compartido</span>
+          <span class="data-card-field-value">${fmt(p.price_shared)}</span>
         </div>
       </div>`;
     cardsContainer.appendChild(div);
@@ -193,10 +193,12 @@ async function handleProductAction(e) {
   if (action === 'edit-product') {
     const p = allProducts.find(x => x.id === id);
     if (!p) return;
-    document.getElementById('productId').value       = p.id;
-    document.getElementById('productName').value     = p.name;
-    document.getElementById('productCategory').value = p.category || '';
-    document.getElementById('productImage').value    = p.image_url || '';
+    document.getElementById('productId').value           = p.id;
+    document.getElementById('productName').value         = p.name;
+    document.getElementById('productCategory').value     = p.category || '';
+    document.getElementById('productImage').value        = p.image_url || '';
+    document.getElementById('productPriceFull').value    = p.price_full != null ? p.price_full : '';
+    document.getElementById('productPriceShared').value  = p.price_shared != null ? p.price_shared : '';
     document.getElementById('productModalTitle').textContent = 'Editar producto';
     openModal('productModalOverlay');
   }
@@ -214,17 +216,21 @@ document.getElementById('productModalClose').addEventListener('click', () => clo
 document.getElementById('productModalCancel').addEventListener('click', () => closeModal('productModalOverlay'));
 
 function clearProductForm() {
-  ['productId','productName','productCategory','productImage'].forEach(id => document.getElementById(id).value = '');
+  ['productId','productName','productCategory','productImage','productPriceFull','productPriceShared'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('productModalTitle').textContent = 'Nuevo producto';
 }
 
 document.getElementById('productForm').addEventListener('submit', async e => {
   e.preventDefault();
   const id  = document.getElementById('productId').value;
+  const priceFull   = document.getElementById('productPriceFull').value;
+  const priceShared = document.getElementById('productPriceShared').value;
   const payload = {
-    name:      document.getElementById('productName').value.trim(),
-    category:  document.getElementById('productCategory').value,
-    image_url: document.getElementById('productImage').value.trim() || null,
+    name:         document.getElementById('productName').value.trim(),
+    category:     document.getElementById('productCategory').value,
+    image_url:    document.getElementById('productImage').value.trim() || null,
+    price_full:   priceFull   !== '' ? parseFloat(priceFull)   : null,
+    price_shared: priceShared !== '' ? parseFloat(priceShared) : null,
   };
   const { error } = id
     ? await sb.from('products').update(payload).eq('id', id)
@@ -396,7 +402,7 @@ document.getElementById('accountForm').addEventListener('submit', async e => {
 /* ══════════════════════════════════
    PEDIDOS
 ══════════════════════════════════ */
-let currentOrderStatus = 'pendiente';
+let currentOrderStatus = 'pending';
 
 document.querySelectorAll('.tab-filter').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -407,7 +413,7 @@ document.querySelectorAll('.tab-filter').forEach(btn => {
   });
 });
 
-async function loadOrders(status) {
+async function loadOrders(deliveryStatus) {
   const loadingEl = document.getElementById('ordersLoading');
   const tableWrap = document.getElementById('ordersTableWrap');
   const cardsEl   = document.getElementById('ordersCards');
@@ -418,9 +424,10 @@ async function loadOrders(status) {
   cardsEl.style.display   = 'none';
   emptyEl.style.display   = 'none';
 
-  const { data, error } = await sb.from('orders')
-    .select('*, accounts(description, products(name))')
-    .eq('status', status)
+  const { data, error } = await sb
+    .from('orders')
+    .select('*, products(name, image_url)')
+    .eq('delivery_status', deliveryStatus)
     .order('created_at', { ascending: false });
 
   updatePendingBadge();
@@ -431,49 +438,35 @@ async function loadOrders(status) {
     return;
   }
 
-  const statusBadge = s => ({
-    pendiente: `<span class="badge badge--orange"><span class="badge-dot"></span>Pendiente</span>`,
-    aprobado:  `<span class="badge badge--green"><span class="badge-dot"></span>Aprobado</span>`,
-    rechazado: `<span class="badge badge--red"><span class="badge-dot"></span>Rechazado</span>`,
-  }[s] || s);
+  const typeLabel = t => t === 'full' ? 'Cuenta completa' : t === 'shared' ? 'Perfil compartido' : '—';
 
-  const orderActions = o => o.status !== 'pendiente' ? '' : `
-    <button class="btn-approve" data-action="approve-order" data-id="${o.id}" data-account="${o.account_id}">
+  const deliveryBadge = s => s === 'pending'
+    ? `<span class="badge badge--orange"><span class="badge-dot"></span>Pendiente</span>`
+    : `<span class="badge badge--green"><span class="badge-dot"></span>Entregado</span>`;
+
+  const actionBtn = o => o.delivery_status !== 'pending' ? '' : `
+    <button class="btn-approve" data-action="deliver-order" data-id="${o.id}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
-      Aprobar
-    </button>
-    <button class="btn-reject" data-action="reject-order" data-id="${o.id}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      Rechazar
+      Completar
     </button>`;
 
-  const voucherThumb = o => o.voucher_url
-    ? `<button class="voucher-thumb-btn" data-action="view-voucher" data-id="${o.id}" data-url="${o.voucher_url}" title="Ver comprobante">
-         <img class="voucher-thumb" src="${o.voucher_url}" alt="Comprobante" loading="lazy" />
-         <span class="voucher-thumb-overlay">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-           Ver
-         </span>
-       </button>`
-    : '<span class="voucher-empty">Sin comprobante</span>';
-
-  // Tabla
+  // Tabla desktop
   const tbody = document.getElementById('ordersBody');
   tbody.innerHTML = '';
   data.forEach(o => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${fmtDate(o.created_at)}</td>
-      <td>${o.customer_email || '<span style="color:var(--muted)">—</span>'}</td>
-      <td>${o.accounts?.products?.name || '—'}</td>
+      <td>${o.user_email || '<span style="color:var(--muted)">—</span>'}</td>
+      <td><strong>${o.products?.name || '—'}</strong></td>
+      <td><span class="type-pill">${typeLabel(o.order_type)}</span></td>
       <td><strong>$${parseFloat(o.amount||0).toFixed(2)}</strong> <span style="font-size:0.72rem;color:var(--muted)">MXN</span></td>
-      <td>${voucherThumb(o)}</td>
-      <td>${statusBadge(o.status)}</td>
-      <td><div class="order-action-row">${orderActions(o)}</div></td>`;
+      <td>${deliveryBadge(o.delivery_status)}</td>
+      <td><div class="order-action-row">${actionBtn(o)}</div></td>`;
     tbody.appendChild(tr);
   });
 
-  // Cards (móvil)
+  // Cards móvil
   const cardsContainer = document.getElementById('ordersCards');
   cardsContainer.innerHTML = '';
   data.forEach(o => {
@@ -481,15 +474,18 @@ async function loadOrders(status) {
     div.className = 'data-card order-card';
     div.innerHTML = `
       <div class="order-card-top">
-        ${voucherThumb(o)}
         <div class="order-card-info">
-          <div class="order-card-product">${o.accounts?.products?.name || '—'}</div>
+          <div class="order-card-product">${o.products?.name || '—'}</div>
+          <div class="order-card-meta-row">
+            <span class="type-pill">${typeLabel(o.order_type)}</span>
+            ${deliveryBadge(o.delivery_status)}
+          </div>
           <div class="order-card-amount">$${parseFloat(o.amount||0).toFixed(2)} <span>MXN</span></div>
+          <div class="order-card-email">${o.user_email || '—'}</div>
           <div class="order-card-date">${fmtDate(o.created_at)}</div>
-          ${statusBadge(o.status)}
         </div>
       </div>
-      ${o.status === 'pendiente' ? `<div class="order-card-actions">${orderActions(o)}</div>` : ''}`;
+      ${o.delivery_status === 'pending' ? `<div class="order-card-actions">${actionBtn(o)}</div>` : ''}`;
     cardsContainer.appendChild(div);
   });
 
@@ -499,73 +495,76 @@ async function loadOrders(status) {
 document.getElementById('ordersBody').addEventListener('click', handleOrderAction);
 document.getElementById('ordersCards').addEventListener('click', handleOrderAction);
 
-async function handleOrderAction(e) {
+function handleOrderAction(e) {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const { action, id } = btn.dataset;
-  if (action === 'approve-order') {
-    const accountId = btn.dataset.account;
-    if (!confirm('¿Aprobar este pedido? La cuenta será eliminada del sistema.')) return;
-
-    // 1. Marcar orden como aprobada
-    const { error: orderErr } = await sb.from('orders').update({ status: 'aprobado' }).eq('id', id);
-    if (orderErr) { toast('Error al aprobar la orden', 'error'); return; }
-
-    // 2. Obtener account_id directo de la BD por si el dataset llegó vacío
-    let accId = accountId;
-    if (!accId) {
-      const { data: ord } = await sb.from('orders').select('account_id').eq('id', id).single();
-      accId = ord?.account_id;
-    }
-
-    // 3. Eliminar la cuenta del sistema (ya fue vendida)
-    if (accId) {
-      const { error: accErr } = await sb.from('accounts').delete().eq('id', accId);
-      if (accErr) toast('Orden aprobada pero no se pudo eliminar la cuenta', 'error');
-    } else {
-      toast('Advertencia: no se encontró la cuenta asociada', 'error');
-    }
-
-    toast('Pedido aprobado ✓ — cuenta eliminada', 'success');
-    loadOrders(currentOrderStatus);
-  }
-  if (action === 'reject-order') {
-    if (!confirm('¿Rechazar este pedido? La cuenta volverá a estar disponible.')) return;
-
-    // 1. Marcar orden como rechazada
-    const { error: orderErr } = await sb.from('orders').update({ status: 'rechazado' }).eq('id', id);
-    if (orderErr) { toast('Error al rechazar', 'error'); return; }
-
-    // 2. Obtener account_id para liberar la reserva
-    let accId = btn.dataset.account;
-    if (!accId) {
-      const { data: ord } = await sb.from('orders').select('account_id').eq('id', id).single();
-      accId = ord?.account_id;
-    }
-
-    // 3. Liberar reserva y volver a poner disponible
-    if (accId) {
-      await sb.from('accounts').update({
-        is_available:   true,
-        reserved:       false,
-        reserved_until: null,
-      }).eq('id', accId);
-    }
-
-    toast('Pedido rechazado — cuenta disponible de nuevo');
-    loadOrders(currentOrderStatus);
-  }
-  if (action === 'view-voucher') {
-    document.getElementById('voucherImg').src = btn.dataset.url;
-    document.getElementById('voucherActions').innerHTML = `<a href="${btn.dataset.url}" target="_blank" class="btn-secondary">Abrir en nueva pestaña</a>`;
-    openModal('voucherModalOverlay');
-  }
+  if (action === 'deliver-order') openDeliverModal(id);
 }
+
+// ── Modal de credenciales ──
+async function openDeliverModal(orderId) {
+  const { data: order } = await sb
+    .from('orders')
+    .select('*, products(name)')
+    .eq('id', orderId)
+    .single();
+
+  if (!order) { toast('No se encontró el pedido', 'error'); return; }
+
+  document.getElementById('deliverOrderId').value = orderId;
+  const typeLabel = order.order_type === 'full' ? 'Cuenta completa' : 'Perfil compartido';
+  document.getElementById('deliverOrderInfo').innerHTML = `
+    <div class="deliver-info-block">
+      <div class="deliver-info-product">${order.products?.name || '—'}</div>
+      <div class="deliver-info-meta">
+        <span class="type-pill">${typeLabel}</span>
+        <span class="deliver-info-email">${order.user_email || '—'}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('deliverUser').value = order.credentials_user || '';
+  document.getElementById('deliverPass').value = order.credentials_pass || '';
+  document.getElementById('deliverNote').value = order.credentials_note || '';
+
+  openModal('deliverModalOverlay');
+}
+
+document.getElementById('deliverModalClose').addEventListener('click',  () => closeModal('deliverModalOverlay'));
+document.getElementById('deliverModalCancel').addEventListener('click', () => closeModal('deliverModalOverlay'));
+
+document.getElementById('deliverModalSubmit').addEventListener('click', async () => {
+  const orderId = document.getElementById('deliverOrderId').value;
+  const user    = document.getElementById('deliverUser').value.trim();
+  const pass    = document.getElementById('deliverPass').value.trim();
+  const note    = document.getElementById('deliverNote').value.trim();
+
+  if (!user || !pass) { toast('Ingresa usuario y contraseña', 'error'); return; }
+
+  const submitBtn = document.getElementById('deliverModalSubmit');
+  submitBtn.disabled = true;
+
+  const { error } = await sb.from('orders').update({
+    credentials_user: user,
+    credentials_pass: pass,
+    credentials_note: note || null,
+    delivery_status:  'delivered',
+    delivered_at:     new Date().toISOString(),
+  }).eq('id', orderId);
+
+  submitBtn.disabled = false;
+
+  if (error) { toast('Error al guardar credenciales', 'error'); return; }
+
+  toast('¡Pedido entregado! El cliente puede ver sus datos ✓', 'success');
+  closeModal('deliverModalOverlay');
+  loadOrders(currentOrderStatus);
+});
 
 document.getElementById('voucherModalClose').addEventListener('click', () => closeModal('voucherModalOverlay'));
 
 async function updatePendingBadge() {
-  const { count } = await sb.from('orders').select('*', { count:'exact', head:true }).eq('status','pendiente');
+  const { count } = await sb.from('orders').select('*', { count:'exact', head:true }).eq('delivery_status','pending');
   const badge = document.getElementById('pendingBadge');
   badge.style.display = count > 0 ? 'flex' : 'none';
   badge.textContent = count;
