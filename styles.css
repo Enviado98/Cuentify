@@ -308,7 +308,64 @@ body {
    LOADING & EMPTY
 ══════════════════════════════════ */
 
-.products-loading, .accounts-loading {
+/* ── SKELETON SYSTEM ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton-base {
+  background: linear-gradient(90deg, #e8eaf0 25%, #f2f4f8 50%, #e8eaf0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+/* Skeleton card — mismo shape que .product-card */
+.skeleton-card {
+  cursor: default;
+}
+.skeleton-card .sk-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px 16px 0 0;
+}
+.skeleton-card .sk-body {
+  padding: clamp(6px, 2vw, 10px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f2f2f2;
+  border-radius: 0 0 16px 16px;
+}
+.skeleton-card .sk-line {
+  height: 10px;
+  border-radius: 6px;
+}
+.skeleton-card .sk-line-short { width: 55%; }
+.skeleton-card .sk-line-long  { width: 80%; }
+
+/* Grids en skeleton mode muestran placeholder cards */
+.skeleton-grid .skeleton-card { display: block; }
+
+/* Card real: entra con fade+slide */
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.product-card {
+  animation: cardReveal 0.3s ease both;
+}
+
+/* Imagen del card: fade al cargar */
+.product-thumb {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.product-thumb.loaded { opacity: 1; }
+
+/* Accounts loading (detalle) — mantiene spinner pequeño */
+.accounts-loading {
   display: flex;
   justify-content: center;
   padding: 48px 0;

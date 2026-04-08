@@ -11,8 +11,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 if (!window.supabase) {
   console.error('Supabase SDK no cargó');
-  document.getElementById('productsLoading').style.display = 'none';
-  document.getElementById('productsEmpty').style.display = 'block';
+  clearAllSkeletons();
   return;
 }
 
@@ -215,7 +214,43 @@ const navbar          = document.querySelector('#viewHome .navbar');
 const hamburgerBtn    = document.getElementById('hamburgerBtn');
 const menuSheet       = document.getElementById('menuSheet');
 const menuOverlay     = document.getElementById('menuOverlay');
-const productsLoading = document.getElementById('productsLoading');
+// ── SKELETON HELPERS ──
+const SKELETON_COUNT = 4; // cards placeholder por categoría
+
+function buildSkeletonCard() {
+  const card = document.createElement('div');
+  card.className = 'product-card skeleton-card';
+  card.innerHTML = `
+    <div class="product-thumb-wrapper">
+      <div class="sk-thumb skeleton-base"></div>
+      <div class="sk-body">
+        <div class="sk-line sk-line-long  skeleton-base"></div>
+        <div class="sk-line sk-line-short skeleton-base"></div>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function injectSkeletons(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < SKELETON_COUNT; i++) {
+    grid.appendChild(buildSkeletonCard());
+  }
+}
+
+function clearSkeletons(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.classList.remove('skeleton-grid');
+  grid.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+}
+
+function clearAllSkeletons() {
+  ['streaming', 'musica', 'gaming', 'software'].forEach(cat => clearSkeletons(`grid-${cat}`));
+}
 
 // ── ELEMENTS: DETAIL ──
 const backBtn               = document.getElementById('backBtn');
@@ -327,7 +362,9 @@ async function loadTrends() {
 /* Carga todas las categorías en secciones verticales */
 async function loadAllCategories() {
   const categories = ['streaming', 'musica', 'gaming', 'software'];
-  productsLoading.style.display = 'flex';
+
+  // Inyectar skeletons inmediatamente en cada grid
+  categories.forEach(cat => injectSkeletons(`grid-${cat}`));
 
   // Traer todos los productos de una vez
   const { data, error } = await supabase
@@ -336,9 +373,10 @@ async function loadAllCategories() {
     .in('category', categories)
     .order('created_at', { ascending: false });
 
-  productsLoading.style.display = 'none';
-
-  if (error || !data || data.length === 0) return;
+  if (error || !data || data.length === 0) {
+    clearAllSkeletons();
+    return;
+  }
 
   // Contar cuentas disponibles
   const productIds = data.map(p => p.id);
@@ -355,35 +393,38 @@ async function loadAllCategories() {
     countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
   });
 
-  // Renderizar por sección
+  // Renderizar por sección: primero limpiar skeletons, luego insertar cards escalonados
   categories.forEach(cat => {
-    const grid  = document.getElementById(`grid-${cat}`);
-    const empty = document.getElementById(`empty-${cat}`);
+    const grid    = document.getElementById(`grid-${cat}`);
+    const empty   = document.getElementById(`empty-${cat}`);
     const section = document.getElementById(`section-${cat}`);
     const catProducts = data.filter(p => p.category === cat);
+
+    clearSkeletons(`grid-${cat}`);
 
     if (!catProducts.length) {
       section.style.display = 'none';
       return;
     }
 
-    catProducts.forEach(product => {
+    catProducts.forEach((product, i) => {
       product._accountsCount = countMap[product.id] || 0;
-      grid.appendChild(buildCard(product));
+      const card = buildCard(product);
+      card.style.animationDelay = `${i * 60}ms`;
+      grid.appendChild(card);
     });
   });
 }
 
 /* Carga solo la categoría Internet (tab aparte) */
 async function loadInternetProducts() {
-  const grid  = document.getElementById('grid-internet');
-  const empty = document.getElementById('empty-internet');
+  const grid    = document.getElementById('grid-internet');
+  const empty   = document.getElementById('empty-internet');
   const section = document.getElementById('internetSection');
 
-  grid.innerHTML = '';
-  empty.style.display = 'none';
-  section.style.display = 'block';
-  productsLoading.style.display = 'flex';
+  if (grid) { grid.innerHTML = ''; grid.classList.add('skeleton-grid'); injectSkeletons('grid-internet'); }
+  if (empty) empty.style.display = 'none';
+  if (section) section.style.display = 'block';
 
   const { data, error } = await supabase
     .from('products')
@@ -391,10 +432,10 @@ async function loadInternetProducts() {
     .eq('category', 'internet')
     .order('created_at', { ascending: false });
 
-  productsLoading.style.display = 'none';
+  clearSkeletons('grid-internet');
 
   if (error || !data || data.length === 0) {
-    empty.style.display = 'block';
+    if (empty) empty.style.display = 'block';
     return;
   }
 
@@ -412,9 +453,11 @@ async function loadInternetProducts() {
     countMap[row.product_id] = (countMap[row.product_id] || 0) + 1;
   });
 
-  data.forEach(product => {
+  data.forEach((product, i) => {
     product._accountsCount = countMap[product.id] || 0;
-    grid.appendChild(buildCard(product));
+    const card = buildCard(product);
+    card.style.animationDelay = `${i * 60}ms`;
+    grid.appendChild(card);
   });
 }
 
@@ -447,6 +490,14 @@ function buildCard(product) {
       </div>
     </div>
   `;
+
+  // Fade-in de la imagen al terminar de cargar
+  const img = card.querySelector('.product-thumb');
+  if (img) {
+    img.addEventListener('load',  () => img.classList.add('loaded'));
+    img.addEventListener('error', () => img.classList.add('loaded')); // no se queda en blanco
+    if (img.complete) img.classList.add('loaded');
+  }
 
   card.addEventListener('click', () => openDetailView(product));
   return card;
@@ -1363,12 +1414,6 @@ supabase.auth.getSession().then(({ data: { session } }) => {
     setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
   }
 })();
-
-setTimeout(() => {
-  if (productsLoading.style.display !== 'none') {
-    productsLoading.style.display = 'none';
-  }
-}, 8000);
 
 
 }); // fin DOMContentLoaded
