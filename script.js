@@ -1220,18 +1220,17 @@ btnBuy.addEventListener('click', async () => {
 
   try {
     const { data: { session: authSession } } = await supabase.auth.getSession();
-    const amount       = parseFloat(currentAccount.price) || 0;
-    const product_name = currentProduct?.name || 'Cuenta digital';
-    const user_email   = authSession?.user?.email || null;
+    const user_email = authSession?.user?.email || null;
 
     // Crear Checkout Session en la Edge Function
+    // Solo mandamos account_id y user_email — el precio lo lee la Edge Function desde la BD
     const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON}`,
       },
-      body: JSON.stringify({ account_id: currentAccount.id, amount, product_name, user_email }),
+      body: JSON.stringify({ account_id: currentAccount.id, user_email }),
     });
 
     const { url, error } = await res.json();
@@ -1358,3 +1357,4 @@ setTimeout(() => {
 
 
 }); // fin DOMContentLoaded
+
