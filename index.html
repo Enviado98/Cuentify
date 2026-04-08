@@ -238,6 +238,8 @@
   <div class="buy-sheet buy-sheet-pay" id="buySheetPay">
     <div class="buy-sheet-handle"></div>
     <div class="buy-sheet-body">
+
+      <!-- Header -->
       <div class="buy-header">
         <button class="buy-back-btn" id="btnBackToSummary" aria-label="Volver">
           <iconify-icon icon="lucide:arrow-left" width="18"></iconify-icon>
@@ -246,7 +248,9 @@
         <div class="buy-header-total" id="buyHeaderTotal">$0.00</div>
       </div>
 
+      <!-- Countdown -->
       <div class="reserve-countdown" id="reserveCountdown" style="display:none;">
+        <iconify-icon icon="lucide:clock" width="13" style="color:#fff; flex-shrink:0;"></iconify-icon>
         <span class="reserve-time">30:00</span>
       </div>
 
@@ -265,29 +269,32 @@
       <!-- ══ PANEL STRIPE CHECKOUT ══ -->
       <div id="panelCard">
 
+        <!-- Card brands -->
         <div class="stripe-checkout-info">
           <div class="stripe-checkout-brands">
-            <iconify-icon icon="logos:visa" width="38" height="24"></iconify-icon>
-            <iconify-icon icon="logos:mastercard" width="38" height="24"></iconify-icon>
-            <iconify-icon icon="logos:amex" width="38" height="24"></iconify-icon>
+            <iconify-icon icon="logos:visa" width="40" height="26"></iconify-icon>
+            <iconify-icon icon="logos:mastercard" width="40" height="26"></iconify-icon>
+            <iconify-icon icon="logos:amex" width="40" height="26"></iconify-icon>
           </div>
           <p class="stripe-checkout-desc">
             Serás redirigido a la página segura de Stripe para completar tu pago.
           </p>
         </div>
 
+        <!-- Pay button -->
         <button class="btn-buy-primary btn-pay-now" id="btnBuy">
           <iconify-icon icon="lucide:lock" width="16"></iconify-icon>
           <span class="btn-buy-text">Pagar <span id="btnPayAmount">$0.00</span> con Stripe</span>
           <span class="btn-buy-spinner"></span>
         </button>
 
+        <!-- Trust badges -->
         <div class="pay-footer-badges">
-          <iconify-icon icon="simple-icons:stripe" width="36" style="color:#635BFF"></iconify-icon>
-          <span class="pay-footer-sep">·</span>
-          <iconify-icon icon="lucide:shield-check" width="14" style="color:#16a34a"></iconify-icon>
-          <span class="pay-footer-text">Cifrado SSL 256-bit</span>
-          <span class="pay-footer-sep">·</span>
+          <iconify-icon icon="simple-icons:stripe" width="32" class="pay-footer-stripe-icon"></iconify-icon>
+          <div class="pay-footer-divider"></div>
+          <iconify-icon icon="lucide:shield-check" width="13" class="pay-footer-shield-icon"></iconify-icon>
+          <span class="pay-footer-text">SSL 256-bit</span>
+          <div class="pay-footer-dot"></div>
           <span class="pay-footer-text">PCI DSS</span>
         </div>
 

@@ -1222,8 +1222,6 @@ btnBuy.addEventListener('click', async () => {
     const { data: { session: authSession } } = await supabase.auth.getSession();
     const user_email = authSession?.user?.email || null;
 
-    // Crear Checkout Session en la Edge Function
-    // Solo mandamos account_id y user_email — el precio lo lee la Edge Function desde la BD
     const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
       method: 'POST',
       headers: {
@@ -1236,8 +1234,25 @@ btnBuy.addEventListener('click', async () => {
     const { url, error } = await res.json();
     if (error || !url) throw new Error(error || 'No se pudo iniciar el pago.');
 
-    // Redirigir a Stripe Checkout
-    window.location.href = url;
+    // Desactivar el bloqueo de navegación ANTES de redirigir
+    // para que el navegador NO muestre el diálogo "¿Seguro que quieres salir?"
+    disableNavigationBlock();
+
+    // Mostrar overlay de redirección — feedback visual mientras el browser navega
+    const overlay = document.createElement('div');
+    overlay.className = 'stripe-redirect-overlay';
+    overlay.innerHTML = `
+      <div class="stripe-redirect-spinner"></div>
+      <div class="stripe-redirect-logo">
+        <iconify-icon icon="simple-icons:stripe" width="28"></iconify-icon>
+      </div>
+      <div class="stripe-redirect-label">Redirigiendo a Stripe…</div>
+      <div class="stripe-redirect-sub">Pago seguro · SSL 256-bit · PCI DSS</div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Pequeño delay para que el overlay sea visible antes del redirect
+    setTimeout(() => { window.location.href = url; }, 300);
 
   } catch (err) {
     console.error('Error al iniciar pago:', err);
@@ -1357,4 +1372,3 @@ setTimeout(() => {
 
 
 }); // fin DOMContentLoaded
-
