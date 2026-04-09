@@ -718,7 +718,7 @@ window.addEventListener('popstate', () => {
 /* ════════════════════════════════════
    BUY SHEET — 2 pasos (sin reservas)
 ════════════════════════════════════ */
-let selectedOrderType = null; // { type, label, price }
+// { type, label, price } — se asigna en openBuySheet
 
 function openBuySheet(opt) {
   selectedOrderType = opt;
@@ -915,3 +915,310 @@ function setCompressBar(pct, label) {
 // Resultado típico: captura de 4-8 MB → 150-400 KB, visualmente indistinguible
 function compressImage(file) {
   return new Promise((resolve, reject) => {
+    const MAX_SIDE = 1600;
+    const QUALITY  = 0.82;
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        if (width >= height) { height = Math.round((height / width) * MAX_SIDE); width = MAX_SIDE; }
+        else                 { width  = Math.round((width / height) * MAX_SIDE); height = MAX_SIDE; }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('Canvas toBlob falló')); return; }
+        resolve(blob);
+      }, 'image/jpeg', QUALITY);
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+    img.src = url;
+  });
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+transferFileInput.addEventListener('change', async function () {
+  if (!this.files || !this.files[0]) return;
+  const file = this.files[0];
+  compressedBlob = null;
+
+  // Solo imágenes
+  if (!file.type.startsWith('image/')) {
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
+    return;
+  }
+
+  // Muestra estado de compresión
+  showCompressStatus(true);
+  setCompressBar(20, 'Leyendo imagen…');
+
+  try {
+    setCompressBar(50, 'Optimizando calidad…');
+    const blob = await compressImage(file);
+    setCompressBar(90, 'Finalizando…');
+
+    compressedBlob = blob;
+
+    await new Promise(r => setTimeout(r, 180)); // pequeña pausa visual
+    setCompressBar(100, `✓ ${fmtSize(file.size)} → ${fmtSize(blob.size)}`);
+
+    await new Promise(r => setTimeout(r, 900));
+    showCompressStatus(false);
+
+    // Marca el área como lista
+    transferUploadArea.classList.add('has-file');
+    document.getElementById('transferUploadIcon').innerHTML =
+      '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
+    const name = file.name;
+    document.getElementById('transferUploadTitle').textContent =
+      name.length > 28 ? name.substring(0, 25) + '…' : name;
+    document.getElementById('transferUploadSub').textContent =
+      `Optimizado · ${fmtSize(blob.size)}`;
+  } catch (err) {
+    showCompressStatus(false);
+    console.error('Compresión fallida:', err);
+    // Fallback: usar archivo original
+    compressedBlob = file;
+    transferUploadArea.classList.add('has-file');
+    document.getElementById('transferUploadIcon').innerHTML =
+      '<iconify-icon icon="lucide:check-circle-2" width="22" style="color:#16a34a;"></iconify-icon>';
+    document.getElementById('transferUploadTitle').textContent = file.name.length > 28 ? file.name.substring(0, 25) + '…' : file.name;
+    document.getElementById('transferUploadSub').textContent = 'Comprobante adjuntado ✓';
+  }
+});
+
+/* ── Enviar comprobante ── */
+document.getElementById('btnTransferSend').addEventListener('click', async () => {
+  if (!compressedBlob) {
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 800);
+    return;
+  }
+  if (!selectedOrderType || !currentProduct) return;
+
+  const sendBtn = document.getElementById('btnTransferSend');
+  sendBtn.disabled = true;
+  sendBtn.querySelector('span').textContent = 'Enviando…';
+
+  try {
+    // 1. Subir comprobante a Supabase Storage
+    let uploadBlob = compressedBlob;
+    if (!(uploadBlob instanceof Blob) || uploadBlob.type !== 'image/jpeg') {
+      uploadBlob = new Blob([uploadBlob], { type: 'image/jpeg' });
+    }
+
+    const fileName = `comprobantes/${Date.now()}_${Math.random().toString(36).substring(2,7)}.jpg`;
+    const { error: uploadError } = await supabase
+      .storage
+      .from('vouchers')
+      .upload(fileName, uploadBlob, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) throw new Error('No se pudo subir el comprobante.');
+
+    const { data: urlData } = supabase.storage.from('vouchers').getPublicUrl(fileName);
+    const voucherUrl = urlData?.publicUrl;
+    if (!voucherUrl) throw new Error('No se pudo obtener la URL del comprobante.');
+
+    // 2. Crear la orden
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    const { error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        product_id:      currentProduct.id,
+        order_type:      selectedOrderType.type,
+        amount:          parseFloat(selectedOrderType.price) || 0,
+        voucher_url:     voucherUrl,
+        status:          'pendiente',
+        delivery_status: 'pending',
+        user_id:         currentSession?.user?.id || null,
+        user_email:      currentSession?.user?.email || null,
+      });
+
+    if (orderError) throw new Error('No se pudo registrar el pedido: ' + orderError.message);
+
+    disableNavigationBlock();
+    closeBuySheet();
+    showSuccessToast();
+  } catch (err) {
+    console.error('Error al enviar comprobante:', err);
+    const sub = document.getElementById('transferUploadSub');
+    if (sub) sub.textContent = err.message || 'Error al enviar. Inténtalo de nuevo.';
+    transferUploadArea.style.borderColor = '#EF4444';
+    setTimeout(() => { transferUploadArea.style.borderColor = ''; }, 2000);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.querySelector('span').textContent = 'Enviar comprobante';
+  }
+});
+
+/* ── Pagar con tarjeta — Stripe Checkout ── */
+btnBuy.addEventListener('click', async () => {
+  if (btnBuy.disabled) return;
+  if (!selectedOrderType || !currentProduct) return;
+
+  btnBuy.disabled = true;
+  btnBuy.classList.add('loading');
+
+  try {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    const user_email = authSession?.user?.email || null;
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+      body: JSON.stringify({
+        product_id:  currentProduct.id,
+        order_type:  selectedOrderType.type,
+        amount:      selectedOrderType.price,
+        product_name: currentProduct.name,
+        user_email,
+        user_id: authSession?.user?.id || null,
+      }),
+    });
+
+    const { url, error } = await res.json();
+    if (error || !url) throw new Error(error || 'No se pudo iniciar el pago.');
+
+    disableNavigationBlock();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'stripe-redirect-overlay';
+    overlay.innerHTML = `
+      <div class="stripe-redirect-spinner"></div>
+      <div class="stripe-redirect-logo">
+        <iconify-icon icon="simple-icons:stripe" width="28"></iconify-icon>
+      </div>
+      <div class="stripe-redirect-label">Redirigiendo a Stripe…</div>
+      <div class="stripe-redirect-sub">Pago seguro · SSL 256-bit · PCI DSS</div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => { window.location.href = url; }, 300);
+
+  } catch (err) {
+    console.error('Error al iniciar pago:', err);
+    btnBuy.disabled = false;
+    btnBuy.classList.remove('loading');
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.style.background = '#EF4444';
+    toast.innerHTML = `<iconify-icon icon="lucide:alert-circle" width="18"></iconify-icon><span>${err.message || 'Error al conectar con el servidor de pagos.'}</span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  }
+});
+
+
+
+function showSuccessToast() {
+  const toast = document.createElement('div');
+  toast.className = 'success-toast';
+  toast.innerHTML = '<iconify-icon icon="lucide:check-circle" width="18"></iconify-icon><span>¡Pago procesado! Recibirás los datos pronto.</span>';
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+
+
+/* ════════════════════════════════════
+   MENU
+════════════════════════════════════ */
+function openMenu() {
+  menuOpen = true;
+  menuSheet.classList.add('open');
+  menuOverlay.classList.add('visible');
+  navbar.classList.add('menu-open');
+  hamburgerBtn.classList.add('is-open');
+}
+
+function closeMenu() {
+  menuOpen = false;
+  menuSheet.classList.remove('open');
+  menuOverlay.classList.remove('visible');
+  navbar.classList.remove('menu-open');
+  hamburgerBtn.classList.remove('is-open');
+}
+
+hamburgerBtn.addEventListener('click', async () => {
+  if (menuOpen) { closeMenu(); return; }
+  // Si no hay sesión, abrir modal de login en lugar del menú
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    openAuthModal('Inicia sesión o crea tu cuenta');
+    return;
+  }
+  openMenu();
+});
+menuOverlay.addEventListener('click', closeMenu);
+
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+switchTab("digital");
+loadAllCategories();
+loadTrends();
+
+supabase.auth.getSession().then(({ data: { session } }) => {
+  updateMenuAuth(session?.user || null);
+});
+
+// ── Manejar retorno desde Stripe Checkout ──
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+
+  if (!payment) return;
+
+  const cleanUrl = window.location.pathname;
+  history.replaceState({}, '', cleanUrl);
+
+  if (payment === 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.innerHTML = '<iconify-icon icon="lucide:check-circle" width="18"></iconify-icon><span>¡Pago completado! Recibirás los datos pronto.</span>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 5000);
+  }
+
+  if (payment === 'cancelled') {
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.style.background = '#6B7280';
+    toast.innerHTML = '<iconify-icon icon="lucide:x-circle" width="18"></iconify-icon><span>Pago cancelado.</span>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  }
+})();
+
+
+}); // fin DOMContentLoaded
