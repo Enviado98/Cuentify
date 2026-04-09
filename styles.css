@@ -65,6 +65,258 @@ body {
   visibility: visible;
 }
 
+/* ── Vista Mis Pedidos ── */
+#viewOrders {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0, 0.15, 1);
+  -webkit-overflow-scrolling: touch;
+  visibility: hidden;
+}
+#viewOrders.open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.orders-view-body {
+  padding: 16px 16px 32px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.orders-loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.orders-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 64px 24px;
+  text-align: center;
+}
+.orders-empty p {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin: 0;
+}
+.orders-empty span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Card de cada pedido */
+.my-order-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  margin-bottom: 14px;
+  overflow: hidden;
+  animation: cardReveal 0.3s ease both;
+}
+
+.my-order-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.my-order-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #0ea5e9, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #fff;
+  overflow: hidden;
+}
+.my-order-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-order-info { flex: 1; min-width: 0; }
+
+.my-order-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-order-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.my-order-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.my-order-amount {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* Badge de estado del pedido */
+.my-order-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 3px 9px;
+}
+.my-order-badge.delivered {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+.my-order-badge.pending {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+/* Bloque de credenciales */
+.my-order-credentials {
+  margin: 0 16px 14px;
+  background: #F0FDF4;
+  border: 1.5px solid #BBF7D0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.my-order-cred-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #16A34A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.my-order-cred-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.my-order-cred-row:last-child { margin-bottom: 0; }
+
+.my-order-cred-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.my-order-cred-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-family: 'Courier New', monospace;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #D1FAE5;
+}
+
+.my-order-cred-copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #16A34A;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.my-order-cred-copy:active { background: #DCFCE7; }
+
+.my-order-cred-note {
+  font-size: 0.75rem;
+  color: #166534;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #D1FAE5;
+}
+
+/* Bloque pendiente */
+.my-order-pending-block {
+  margin: 0 16px 14px;
+  background: #FFFBEB;
+  border: 1.5px solid #FDE68A;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.my-order-pending-block p {
+  font-size: 0.8rem;
+  color: #92400E;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Botón Mis pedidos en el menú */
+.menu-orders-link {
+  padding: 8px 0 4px;
+  border-top: 1.5px solid #F3F4F6;
+  margin-top: 4px;
+}
+.menu-orders-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #EFF6FF;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--blue);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s;
+}
+.menu-orders-btn:active { background: #DBEAFE; }
+
 
 /* ══════════════════════════════════
    NAVBAR
@@ -371,7 +623,8 @@ body {
 }
 
 /* Badge de tipo en el buy sheet */
-.buy-type-badge {
+.buy-type-badge,
+.order-type-chip {
   display: inline-block;
   margin-top: 4px;
   font-size: 0.7rem;

@@ -111,6 +111,33 @@
 
   </div><!-- /viewDetail -->
 
+  <!-- ══════════════════════════════
+       VISTA 3: MIS PEDIDOS
+  ══════════════════════════════ -->
+  <div id="viewOrders">
+    <header class="navbar navbar-detail">
+      <button class="back-btn" id="backOrdersBtn" aria-label="Volver">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="detail-navbar-title">Mis pedidos</div>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="orders-view-body">
+      <div class="orders-loading-wrap" id="myOrdersLoading">
+        <div class="spinner"></div>
+      </div>
+      <div id="myOrdersList"></div>
+      <div class="orders-empty" id="myOrdersEmpty" style="display:none;">
+        <iconify-icon icon="lucide:package-open" width="44" style="color:#D1D5DB;"></iconify-icon>
+        <p>Aún no tienes pedidos.</p>
+        <span>Tus compras aparecerán aquí.</span>
+      </div>
+    </div>
+  </div><!-- /viewOrders -->
+
   <!-- ══════════════ MODALES ══════════════ -->
 
   <!-- MENU SHEET -->
@@ -149,6 +176,12 @@
         <a href="#" class="menu-nav-item" data-tab="software">Software</a>
         <a href="#" class="menu-nav-item" data-tab="internet">Internet</a>
       </nav>
+      <div class="menu-orders-link" id="menuOrdersLink" style="display:none;">
+        <button class="menu-orders-btn" id="btnMyOrders">
+          <iconify-icon icon="lucide:package" width="16"></iconify-icon>
+          Mis pedidos
+        </button>
+      </div>
     </div>
   </div>
 
